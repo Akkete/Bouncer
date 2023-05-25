@@ -51,42 +51,48 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       model: Model,
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
-    val tileSize = 32
+    val gridSize = 32
+    val tileSize = gridSize*7/8
+    val playerSize = gridSize*3/4
+    val bounceHeight = gridSize*13/16
     val turnTime = 1.05
     val time = context.running - model.seconds
     val timeFraction = time / turnTime
     val tiles = Batch.fromSet(
       (for ((x, y), tile) <- model.floor yield
-        Shape.Box(Rectangle(0, 0, tileSize*3/4, tileSize*3/4), Fill.Color(RGBA.Yellow))
-          .moveTo(tileSize/2 + tileSize * x, tileSize/2 + tileSize * y)
+        Shape.Box(
+          dimensions = Rectangle(0, 0, tileSize, tileSize), 
+          fill = Fill.Color(RGBA.Yellow)
+        )
+        .moveTo(gridSize/2 + gridSize * x, gridSize/2 + gridSize * y)
       ).toSet
     )
     val playerY = model.player.y * timeFraction.toDouble + (model.player.y - model.player.dy) * (1 - timeFraction.toDouble)
     val playerX = model.player.x * timeFraction.toDouble + (model.player.x - model.player.dx) * (1 - timeFraction.toDouble)
     val player = Shape.Circle(
       center = Point(
-        (tileSize/2 + tileSize*3/4/2 + playerX * tileSize).toInt, 
-        (tileSize/2 + tileSize*3/4/2 + playerY * tileSize).toInt - (bounceHeight.at(timeFraction) * tileSize*3/4).toInt
+        (gridSize/2 + tileSize/2 + playerX * gridSize).toInt, 
+        (gridSize/2 + tileSize/2 + playerY * gridSize).toInt - (bounceAnimation.at(timeFraction) * bounceHeight).toInt
       ),
-      radius = tileSize*3/4/2,
+      radius = playerSize/2,
       fill = Fill.Color(RGBA.Red)
     )
     val shadow = Shape.Circle(
       center = Point(
-        (tileSize/2 + tileSize*3/4/2 + playerX * tileSize).toInt, 
-        (tileSize/2 + tileSize*3/4/2 + playerY * tileSize).toInt
+        (gridSize/2 + tileSize/2 + playerX * gridSize).toInt, 
+        (gridSize/2 + tileSize/2 + playerY * gridSize).toInt
       ),
-      radius = (tileSize*3/4/2 * (0.4 + 0.6 * (1 - bounceHeight.at(timeFraction)))).toInt,
+      radius = (playerSize/2 * (0.4 + 0.6 * (1 - bounceAnimation.at(timeFraction)))).toInt,
       fill = Fill.Color(RGBA.SlateGray)
     ).scaleBy(1, 0.8)
     val helper = Shape.Line(
       Point(
-        tileSize/2 + tileSize*3/4/2 + model.player.x * tileSize, 
-        tileSize/2 + tileSize*3/4/2 + model.player.y * tileSize
+        gridSize/2 + tileSize/2 + model.player.x * gridSize, 
+        gridSize/2 + tileSize/2 + model.player.y * gridSize
       ),
       Point(
-        tileSize/2 + tileSize*3/4/2 + (model.player.x + model.player.dx + viewModel.currentInput.dx) * tileSize, 
-        tileSize/2 + tileSize*3/4/2 + (model.player.y + model.player.dy + viewModel.currentInput.dy) * tileSize
+        gridSize/2 + tileSize/2 + (model.player.x + model.player.dx + viewModel.currentInput.dx) * gridSize, 
+        gridSize/2 + tileSize/2 + (model.player.y + model.player.dy + viewModel.currentInput.dy) * gridSize
       ),
       Stroke(width = 2, color = RGBA.Blue)
     )
@@ -106,7 +112,7 @@ val directionKeys: Map[Key, Input] = Map(
   Key.RIGHT_ARROW -> Right,
   )
 
-val bounceHeight: Signal[Double] = 
+val bounceAnimation: Signal[Double] = 
   Signal(
     t => {
       val tp = (t.toDouble - 0.5)
