@@ -52,15 +52,17 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
     val tileSize = 32
+    val turnTime = 1.05
     val time = context.running - model.seconds
+    val timeFraction = time / turnTime
     val tiles = Batch.fromSet(
       (for ((x, y), tile) <- model.floor yield
         Shape.Box(Rectangle(0, 0, tileSize*3/4, tileSize*3/4), Fill.Color(RGBA.Yellow))
           .moveTo(tileSize/2 + tileSize * x, tileSize/2 + tileSize * y)
       ).toSet
     )
-    val playerY = model.player.y * time.toDouble + (model.player.y - model.player.dy) * (1 - time.toDouble)
-    val playerX = model.player.x * time.toDouble + (model.player.x - model.player.dx) * (1 - time.toDouble)
+    val playerY = model.player.y * timeFraction.toDouble + (model.player.y - model.player.dy) * (1 - timeFraction.toDouble)
+    val playerX = model.player.x * timeFraction.toDouble + (model.player.x - model.player.dx) * (1 - timeFraction.toDouble)
     val player = Shape.Circle(
       center = Point(
         (tileSize/2 + tileSize*3/4/2 + playerX * tileSize).toInt, 
