@@ -53,9 +53,9 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       model: Model,
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
-    val gridSize = 32
-    val tileSize = gridSize
-    val playerSize = gridSize*3/4
+    val gridSize     = 32
+    val tileSize     = gridSize
+    val playerSize   = gridSize*3/4
     val bounceHeight = gridSize*13/16
     val turnTime = 1.05
     val time = context.running - model.seconds
@@ -63,12 +63,12 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
 
     def tileGraphic(tile: Tile): Graphic[Bitmap] = 
       val bitmap = tile match {
-        case Fall  => Bitmap(AssetName("fall"))
-        case Solid => Bitmap(AssetName("solid"))
+        case Fall         => Bitmap(AssetName("fall"))
+        case Solid        => Bitmap(AssetName("solid"))
         case Crackable(0) => Bitmap(AssetName("crackable"))
         case Crackable(1) => Bitmap(AssetName("cracked once"))
         case Crackable(2) => Bitmap(AssetName("cracked twice"))
-        case _ => Bitmap(AssetName("unknown"))
+        case _            => Bitmap(AssetName("unknown"))
       }
       Graphic(
         bounds = Rectangle(0, 0, tileSize, tileSize),
