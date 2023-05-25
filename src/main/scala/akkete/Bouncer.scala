@@ -25,6 +25,7 @@ object Bouncer extends IndigoGame[Unit, Unit, Model, ViewModel]:
       )
       .withAssets(
         AssetType.Image(AssetName("unknown"), AssetPath("assets/Unknown-01.png")),
+        AssetType.Image(AssetName("fall"), AssetPath("assets/Fall-01.png")),
         AssetType.Image(AssetName("solid"), AssetPath("assets/Solid-01.png")),
         AssetType.Image(AssetName("crackable"), AssetPath("assets/Crackable-01.png")),
         AssetType.Image(AssetName("cracked once"), AssetPath("assets/CrackedOnce-01.png")),

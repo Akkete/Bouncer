@@ -63,7 +63,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
 
     def tileGraphic(tile: Tile): Graphic[Bitmap] = 
       val bitmap = tile match {
-        case Fall  => Bitmap(AssetName("unknown"))
+        case Fall  => Bitmap(AssetName("fall"))
         case Solid => Bitmap(AssetName("solid"))
         case Crackable(0) => Bitmap(AssetName("crackable"))
         case Crackable(1) => Bitmap(AssetName("cracked once"))
