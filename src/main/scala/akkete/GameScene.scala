@@ -39,7 +39,12 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       model: Model,
       viewModel: ViewModel
   ): GlobalEvent => Outcome[ViewModel] =
-    _ => Outcome(viewModel)
+    case FrameTick =>
+      val inputDirection = context.keyboard.lastKeyHeldDown
+        .flatMap(directionKeys.get(_))
+        .headOption.getOrElse(NoInput)
+      Outcome(ViewModel(inputDirection))
+    case _ => Outcome(viewModel)
 
   def present(
       context: SceneContext[Unit],
@@ -72,10 +77,22 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       radius = (tileSize*3/4/2 * (0.4 + 0.6 * (1 - bounceHeight.at(time)))).toInt,
       fill = Fill.Color(RGBA.SlateGray)
     ).scaleBy(1, 0.8)
+    val helper = Shape.Line(
+      Point(
+        tileSize/2 + tileSize*3/4/2 + model.player.x * tileSize, 
+        tileSize/2 + tileSize*3/4/2 + model.player.y * tileSize
+      ),
+      Point(
+        tileSize/2 + tileSize*3/4/2 + (model.player.x + model.player.dx + viewModel.currentInput.dx) * tileSize, 
+        tileSize/2 + tileSize*3/4/2 + (model.player.y + model.player.dy + viewModel.currentInput.dy) * tileSize
+      ),
+      Stroke(width = 2, color = RGBA.Blue)
+    )
 
     Outcome(
       SceneUpdateFragment(tiles)
       |+| SceneUpdateFragment(shadow)
+      |+| SceneUpdateFragment(helper)
       |+| SceneUpdateFragment(player)
     )
 
