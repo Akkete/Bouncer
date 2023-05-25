@@ -61,26 +61,41 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     val time = context.running - model.seconds
     val timeFraction = time / turnTime
 
-    def tileGraphic(tile: Tile): Graphic[Bitmap] = 
-      val bitmap = tile match {
-        case Fall         => Bitmap(AssetName("fall"))
-        case Solid        => Bitmap(AssetName("solid"))
-        case Crackable(0) => Bitmap(AssetName("crackable"))
-        case Crackable(1) => Bitmap(AssetName("cracked once"))
-        case Crackable(2) => Bitmap(AssetName("cracked twice"))
-        case _            => Bitmap(AssetName("unknown"))
-      }
+    val tileCloneBlank = CloneBlank(
+      CloneId("tile"),
       Graphic(
         bounds = Rectangle(0, 0, tileSize, tileSize),
         depth = 1,
-        material = bitmap
+        material = Bitmap(AssetName("tiles"))
       )
+    )
 
-    val tiles = Batch.fromSet(
-      (for ((x, y), tile) <- model.floor yield
-        tileGraphic(tile)
-        .moveTo(gridSize/2 + gridSize * x, gridSize/2 + gridSize * y)
-      ).toSet
+    def tileGraphic(tile: Tile): (Int, Int) = 
+      tile match {
+        case Fall         => (0, 0)
+        case Solid        => (0, 1)
+        case Crackable(0) => (0, 2)
+        case Crackable(1) => (1, 2)
+        case Crackable(2) => (2, 2)
+        case _            => (1, 0)
+      }
+      
+
+    val tiles = CloneTiles(
+      CloneId("tile"),
+      Batch.fromSet(
+        (for ((x, y), tile) <- model.floor yield
+          val (col, row) = tileGraphic(tile)
+          CloneTileData(
+            gridSize/2  + gridSize * x,
+            gridSize/2  + gridSize * y,
+            tileSize * col,
+            tileSize * row,
+            tileSize,
+            tileSize
+          )
+        ).toSet
+      )
     )
     val playerY = model.player.y * timeFraction.toDouble + (model.player.y - model.player.dy) * (1 - timeFraction.toDouble)
     val playerX = model.player.x * timeFraction.toDouble + (model.player.x - model.player.dx) * (1 - timeFraction.toDouble)
@@ -113,7 +128,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     )
 
     Outcome(
-      SceneUpdateFragment(tiles)
+      SceneUpdateFragment(tiles).addCloneBlanks(tileCloneBlank)
       |+| SceneUpdateFragment(shadow)
       |+| SceneUpdateFragment(helper)
       |+| SceneUpdateFragment(player)
