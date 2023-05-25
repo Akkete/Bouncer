@@ -76,7 +76,11 @@ case class Model(
       val dy = player.dy + input.dy 
       val x  = player.x + dx
       val y  = player.y + dy
-      Model(seconds, Player(x, y, dx, dy), floor)
+      val updatedFloor = 
+        floor.updatedWith((player.x, player.y))(x => 
+          x.map(_.landingEffect)
+        )
+      Model(seconds, Player(x, y, dx, dy), updatedFloor)
   }
 
 object Model {
@@ -101,39 +105,37 @@ object Model {
 
 case class Player(x: Int, y: Int, dx: Int, dy: Int)
 
-abstract class Tile
+abstract class Tile {
+  def landingEffect: Tile = this
+}
 
 case object Fall extends Tile
 case object Solid extends Tile
-case class Crackable(cracks: Int) extends Tile
+case class Crackable(cracks: Int) extends Tile {
+  override def landingEffect: Tile = 
+    if (cracks < 2) Crackable(cracks + 1) else Fall
+}
 
 case class ViewModel(
   currentInput: Input
 )
 
 abstract class Input{
-  def dx: Int
-  def dy: Int
+  def dx: Int = 0
+  def dy: Int = 0
 }
 
-case object NoInput extends Input {
-  def dx = 0
-  def dy = 0
-}
+case object NoInput extends Input
 case object Up extends Input {
-  def dx = 0
-  def dy = -1
+  override def dy = -1
 }
 case object Down extends Input {
-  def dx = 0
-  def dy = 1
+  override def dy = 1
 }
 case object Left extends Input {
-  def dx = -1
-  def dy = 0
+  override def dx = -1
 }
 case object Right extends Input {
-  def dx = 1
-  def dy = 0
+  override def dx = 1
 }
 
