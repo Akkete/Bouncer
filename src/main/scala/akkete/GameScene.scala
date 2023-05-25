@@ -98,7 +98,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
         (gridSize/2 + tileSize/2 + playerY * gridSize).toInt
       ),
       radius = (playerSize/2 * (0.4 + 0.6 * (1 - bounceAnimation.at(timeFraction)))).toInt,
-      fill = Fill.Color(RGBA.SlateGray)
+      fill = Fill.Color(RGBA.Black.withAlpha(0.5))
     ).scaleBy(1, 0.8)
     val helper = Shape.Line(
       Point(
