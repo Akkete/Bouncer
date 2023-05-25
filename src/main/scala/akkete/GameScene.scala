@@ -58,12 +58,57 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     val turnTime = 1.05
     val time = context.running - model.seconds
     val timeFraction = time / turnTime
+
+    def tileGraphic(tile: Tile): Group = 
+      tile match {
+        case Fall  => Group.empty
+        case Solid => Group(Shape.Box(
+            dimensions = Rectangle(0, 0, tileSize, tileSize),
+            fill = Fill.Color(RGBA.Yellow)
+          ))
+        case Crackable(0) => Group(
+            Shape.Box(
+              dimensions = Rectangle(0, 0, tileSize, tileSize),
+              fill = Fill.Color(RGBA.Salmon)
+            )
+          )
+        case Crackable(1) => Group(
+            Shape.Box(
+              dimensions = Rectangle(0, 0, tileSize, tileSize),
+              fill = Fill.Color(RGBA.Salmon)
+            ),
+            Shape.Line(
+              Point(tileSize/8, tileSize/8),
+              Point(tileSize*7/8, tileSize*7/8),
+              stroke = Stroke(width=2, color=RGBA.SlateGray)
+            )
+          )
+        case Crackable(2) => Group(
+            Shape.Box(
+              dimensions = Rectangle(0, 0, tileSize, tileSize),
+              fill = Fill.Color(RGBA.Salmon)
+            ),
+            Shape.Line(
+              Point(tileSize/8, tileSize/8),
+              Point(tileSize*7/8, tileSize*7/8),
+              stroke = Stroke(width=2, color=RGBA.SlateGray)
+            ),
+            Shape.Line(
+              Point(tileSize/8, tileSize*7/8),
+              Point(tileSize*7/8, tileSize/8),
+              stroke = Stroke(width=2, color=RGBA.SlateGray)
+            )
+          )
+        case _ => Group(Shape.Box(
+            dimensions = Rectangle(0, 0, tileSize, tileSize),
+            fill = Fill.Color(RGBA.Normal)
+          ))
+      }
+      
+
     val tiles = Batch.fromSet(
       (for ((x, y), tile) <- model.floor yield
-        Shape.Box(
-          dimensions = Rectangle(0, 0, tileSize, tileSize), 
-          fill = Fill.Color(RGBA.Yellow)
-        )
+        tileGraphic(tile)
         .moveTo(gridSize/2 + gridSize * x, gridSize/2 + gridSize * y)
       ).toSet
     )
@@ -105,11 +150,12 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     )
 
 
-val directionKeys: Map[Key, Input] = Map(
-  Key.UP_ARROW    -> Up,
-  Key.DOWN_ARROW  -> Down,
-  Key.LEFT_ARROW  -> Left,
-  Key.RIGHT_ARROW -> Right,
+val directionKeys: Map[Key, Input] = 
+  Map(
+    Key.UP_ARROW    -> Up,
+    Key.DOWN_ARROW  -> Down,
+    Key.LEFT_ARROW  -> Left,
+    Key.RIGHT_ARROW -> Right,
   )
 
 val bounceAnimation: Signal[Double] = 
@@ -119,4 +165,5 @@ val bounceAnimation: Signal[Double] =
       (0.25 - (tp * tp)) * 4
     }
   )
+
 

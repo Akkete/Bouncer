@@ -76,8 +76,19 @@ object Model {
   def test: Model =
     Model(
       seconds = Seconds(0),
-      player = Player(4, 4, 0, 0),
-      floor = (for i <- 0 until 20; j <- 0 until 20 yield (i, j) -> Solid).toMap
+      player = Player(8, 8, 0, 0),
+      floor = (
+          for i <- 0 until 20; j <- 0 until 20 yield
+            if (i < 1 || i >= 19 || j < 1 || j >= 19) {
+              (i, j) -> Crackable(2)
+            } else if (i < 2 || i >= 18 || j < 2 || j >= 18) {
+              (i, j) -> Crackable(1)
+            } else if (i < 5 || i >= 15 || j < 5 || j >= 15) {
+              (i, j) -> Crackable(0)
+            } else {
+              (i, j) -> Solid
+            }
+        ).toMap
     )
 }
 
