@@ -66,7 +66,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     val player = Shape.Circle(
       center = Point(
         (tileSize/2 + tileSize*3/4/2 + playerX * tileSize).toInt, 
-        (tileSize/2 + tileSize*3/4/2 + playerY * tileSize).toInt - (bounceHeight.at(time) * tileSize*3/4).toInt
+        (tileSize/2 + tileSize*3/4/2 + playerY * tileSize).toInt - (bounceHeight.at(timeFraction) * tileSize*3/4).toInt
       ),
       radius = tileSize*3/4/2,
       fill = Fill.Color(RGBA.Red)
@@ -76,7 +76,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
         (tileSize/2 + tileSize*3/4/2 + playerX * tileSize).toInt, 
         (tileSize/2 + tileSize*3/4/2 + playerY * tileSize).toInt
       ),
-      radius = (tileSize*3/4/2 * (0.4 + 0.6 * (1 - bounceHeight.at(time)))).toInt,
+      radius = (tileSize*3/4/2 * (0.4 + 0.6 * (1 - bounceHeight.at(timeFraction)))).toInt,
       fill = Fill.Color(RGBA.SlateGray)
     ).scaleBy(1, 0.8)
     val helper = Shape.Line(
@@ -109,9 +109,8 @@ val directionKeys: Map[Key, Input] = Map(
 val bounceHeight: Signal[Double] = 
   Signal(
     t => {
-      val tl = 1.05
-      val tp = (t.toDouble - tl/2)
-      ((tl * tl / 4) - (tp * tp)) * 4 / (tl * tl)
+      val tp = (t.toDouble - 0.5)
+      (0.25 - (tp * tp)) * 4
     }
   )
 
