@@ -32,7 +32,7 @@ object Bouncer extends IndigoGame[Unit, Unit, Model, ViewModel]:
     Outcome(Model.test)
 
   def initialViewModel(startupData: Unit, model: Model): Outcome[ViewModel] =
-    Outcome(ViewModel(NoInput))
+    Outcome(ViewModel(NoInput, GameViewport(1100, 800)))
 
   def setup(
       bootData: Unit,
@@ -65,7 +65,9 @@ object Bouncer extends IndigoGame[Unit, Unit, Model, ViewModel]:
 case class Model(
   seconds: Seconds,
   player: Player,
-  floor: Map[(Int, Int), Tile]
+  floor: Map[(Int, Int), Tile],
+  width: Int,
+  height: Int,
   ) {
     def turn(input: Input, seconds: Seconds): Model = 
       val dx = player.dx + input.dx
@@ -76,7 +78,7 @@ case class Model(
         floor.updatedWith((player.x, player.y))(x => 
           x.map(_.landingEffect)
         )
-      Model(seconds, Player(x, y, dx, dy), updatedFloor)
+      this.copy(seconds, Player(x, y, dx, dy), updatedFloor)
   }
 
 object Model {
@@ -86,6 +88,8 @@ object Model {
     Model(
       seconds = Seconds(0),
       player = Player(9, 9, 0, 0),
+      width = width,
+      height = height,
       floor = (
           for i <- 0 until width; j <- 0 until height yield
             if (i < 1 || i >= width-1 || j < 1 || j >= height-1) {
@@ -115,7 +119,8 @@ case class Crackable(cracks: Int) extends Tile {
 }
 
 case class ViewModel(
-  currentInput: Input
+  currentInput: Input,
+  viewport: GameViewport
 )
 
 abstract class Input{

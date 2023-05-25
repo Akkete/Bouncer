@@ -45,7 +45,9 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       val inputDirection = context.keyboard.lastKeyHeldDown
         .flatMap(directionKeys.get(_))
         .headOption.getOrElse(NoInput)
-      Outcome(ViewModel(inputDirection))
+      Outcome(viewModel.copy(currentInput = inputDirection))
+    case ViewportResize(viewport) =>
+      Outcome(viewModel.copy(viewport = viewport))
     case _ => Outcome(viewModel)
 
   def present(
@@ -53,6 +55,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       model: Model,
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
+
     val gridSize     = 32
     val tileSize     = gridSize
     val playerSize   = gridSize*3/4
@@ -70,6 +73,15 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       )
     )
 
+    val playerX = model.player.x * timeFraction.toDouble + (model.player.x - model.player.dx) * (1 - timeFraction.toDouble)
+    val playerY = model.player.y * timeFraction.toDouble + (model.player.y - model.player.dy) * (1 - timeFraction.toDouble)
+
+    val viewPortWidthTiles = viewModel.viewport.width / tileSize + 2
+    val viewPortHeightTiles = viewModel.viewport.height / tileSize + 2
+
+    val cameraX = (viewPortWidthTiles.toDouble/2 - 2) max playerX min (model.width + 2 - viewPortWidthTiles.toDouble/2)
+    val cameraY = (viewPortHeightTiles.toDouble/2 - 2) max playerY min (model.height + 2 - viewPortHeightTiles.toDouble/2)
+
     def tileGraphic(tile: Tile): (Int, Int) = 
       tile match {
         case Fall         => (0, 0)
@@ -84,11 +96,13 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     val tiles = CloneTiles(
       CloneId("tile"),
       Batch.fromSet(
-        (for ((x, y), tile) <- model.floor yield
+        (for x <- cameraX.toInt - viewPortWidthTiles/2 to cameraX.toInt + viewPortWidthTiles/2;
+             y <- cameraY.toInt - viewPortHeightTiles/2 to cameraY.toInt + viewPortHeightTiles/2 yield
+          val tile = model.floor.getOrElse((x, y), Fall)
           val (col, row) = tileGraphic(tile)
           CloneTileData(
-            gridSize/2  + gridSize * x,
-            gridSize/2  + gridSize * y,
+            gridSize * x,
+            gridSize * y,
             tileSize * col,
             tileSize * row,
             tileSize,
@@ -97,41 +111,44 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
         ).toSet
       )
     )
-    val playerY = model.player.y * timeFraction.toDouble + (model.player.y - model.player.dy) * (1 - timeFraction.toDouble)
-    val playerX = model.player.x * timeFraction.toDouble + (model.player.x - model.player.dx) * (1 - timeFraction.toDouble)
+
     val player = Shape.Circle(
       center = Point(
-        (gridSize/2 + tileSize/2 + playerX * gridSize).toInt, 
-        (gridSize/2 + tileSize/2 + playerY * gridSize).toInt - (bounceAnimation.at(timeFraction) * bounceHeight).toInt
+        (tileSize/2 + playerX * gridSize).toInt, 
+        (tileSize/2 + playerY * gridSize).toInt - (bounceAnimation.at(timeFraction) * bounceHeight).toInt
       ),
       radius = playerSize/2,
       fill = Fill.Color(RGBA.Red)
     )
     val shadow = Shape.Circle(
       center = Point(
-        (gridSize/2 + tileSize/2 + playerX * gridSize).toInt, 
-        (gridSize/2 + tileSize/2 + playerY * gridSize).toInt
+        (tileSize/2 + playerX * gridSize).toInt, 
+        (tileSize/2 + playerY * gridSize).toInt
       ),
       radius = (playerSize/2 * (0.4 + 0.6 * (1 - bounceAnimation.at(timeFraction)))).toInt,
       fill = Fill.Color(RGBA.Black.withAlpha(0.5))
     ).scaleBy(1, 0.8)
     val helper = Shape.Line(
       Point(
-        gridSize/2 + tileSize/2 + model.player.x * gridSize, 
-        gridSize/2 + tileSize/2 + model.player.y * gridSize
+        tileSize/2 + model.player.x * gridSize, 
+        tileSize/2 + model.player.y * gridSize
       ),
       Point(
-        gridSize/2 + tileSize/2 + (model.player.x + model.player.dx + viewModel.currentInput.dx) * gridSize, 
-        gridSize/2 + tileSize/2 + (model.player.y + model.player.dy + viewModel.currentInput.dy) * gridSize
+        tileSize/2 + (model.player.x + model.player.dx + viewModel.currentInput.dx) * gridSize, 
+        tileSize/2 + (model.player.y + model.player.dy + viewModel.currentInput.dy) * gridSize
       ),
       Stroke(width = 2, color = RGBA.Blue)
     )
 
     Outcome(
-      SceneUpdateFragment(tiles).addCloneBlanks(tileCloneBlank)
+      (SceneUpdateFragment(tiles).addCloneBlanks(tileCloneBlank)
       |+| SceneUpdateFragment(shadow)
       |+| SceneUpdateFragment(helper)
-      |+| SceneUpdateFragment(player)
+      |+| SceneUpdateFragment(player))
+      .withCamera(Camera.LookAt(Point(
+        (gridSize/2 + tileSize/2 + cameraX * gridSize).toInt,
+        (gridSize/2 + tileSize/2 + cameraY * gridSize).toInt
+        )))
     )
 
 
