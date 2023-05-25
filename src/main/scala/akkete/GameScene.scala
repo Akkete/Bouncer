@@ -29,7 +29,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       context: SceneContext[Unit],
       model: Model
   ): GlobalEvent => Outcome[Model] =
-    case FrameTick if context.running - model.seconds > Seconds(1.05)=>
+    case FrameTick if context.running - model.seconds > Seconds(1.45)=>
       val inputDirection = context.keyboard.lastKeyHeldDown
         .flatMap(directionKeys.get(_))
         .headOption.getOrElse(NoInput)
@@ -56,8 +56,8 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     val gridSize     = 32
     val tileSize     = gridSize
     val playerSize   = gridSize*3/4
-    val bounceHeight = gridSize*13/16
-    val turnTime = 1.05
+    val bounceHeight = gridSize*15/16
+    val turnTime = 1.45
     val time = context.running - model.seconds
     val timeFraction = time / turnTime
 
