@@ -81,16 +81,18 @@ case class Model(
 
 object Model {
   def test: Model =
+    val width = 50
+    val height = 30
     Model(
       seconds = Seconds(0),
-      player = Player(8, 8, 0, 0),
+      player = Player(9, 9, 0, 0),
       floor = (
-          for i <- 0 until 20; j <- 0 until 20 yield
-            if (i < 1 || i >= 19 || j < 1 || j >= 19) {
+          for i <- 0 until width; j <- 0 until height yield
+            if (i < 1 || i >= width-1 || j < 1 || j >= height-1) {
               (i, j) -> Crackable(2)
-            } else if (i < 2 || i >= 18 || j < 2 || j >= 18) {
+            } else if (i < 2 || i >= width-2 || j < 2 || j >= height-2) {
               (i, j) -> Crackable(1)
-            } else if (i < 5 || i >= 15 || j < 5 || j >= 15) {
+            } else if (i < 8 || i >= width-8 || j < 8 || j >= height-8) {
               (i, j) -> Crackable(0)
             } else {
               (i, j) -> Solid
