@@ -2,6 +2,8 @@ package akkete
 
 import indigo.*
 import indigo.scenes.*
+import indigo.shared.materials.Material.*
+
 
 object GameScene extends Scene[Unit, Model, ViewModel]:
 
@@ -52,59 +54,27 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
     val gridSize = 32
-    val tileSize = gridSize*7/8
+    val tileSize = gridSize
     val playerSize = gridSize*3/4
     val bounceHeight = gridSize*13/16
     val turnTime = 1.05
     val time = context.running - model.seconds
     val timeFraction = time / turnTime
 
-    def tileGraphic(tile: Tile): Group = 
-      tile match {
-        case Fall  => Group.empty
-        case Solid => Group(Shape.Box(
-            dimensions = Rectangle(0, 0, tileSize, tileSize),
-            fill = Fill.Color(RGBA.Yellow)
-          ))
-        case Crackable(0) => Group(
-            Shape.Box(
-              dimensions = Rectangle(0, 0, tileSize, tileSize),
-              fill = Fill.Color(RGBA.Salmon)
-            )
-          )
-        case Crackable(1) => Group(
-            Shape.Box(
-              dimensions = Rectangle(0, 0, tileSize, tileSize),
-              fill = Fill.Color(RGBA.Salmon)
-            ),
-            Shape.Line(
-              Point(tileSize/8, tileSize/8),
-              Point(tileSize*7/8, tileSize*7/8),
-              stroke = Stroke(width=2, color=RGBA.SlateGray)
-            )
-          )
-        case Crackable(2) => Group(
-            Shape.Box(
-              dimensions = Rectangle(0, 0, tileSize, tileSize),
-              fill = Fill.Color(RGBA.Salmon)
-            ),
-            Shape.Line(
-              Point(tileSize/8, tileSize/8),
-              Point(tileSize*7/8, tileSize*7/8),
-              stroke = Stroke(width=2, color=RGBA.SlateGray)
-            ),
-            Shape.Line(
-              Point(tileSize/8, tileSize*7/8),
-              Point(tileSize*7/8, tileSize/8),
-              stroke = Stroke(width=2, color=RGBA.SlateGray)
-            )
-          )
-        case _ => Group(Shape.Box(
-            dimensions = Rectangle(0, 0, tileSize, tileSize),
-            fill = Fill.Color(RGBA.Normal)
-          ))
+    def tileGraphic(tile: Tile): Graphic[Bitmap] = 
+      val bitmap = tile match {
+        case Fall  => Bitmap(AssetName("unknown"))
+        case Solid => Bitmap(AssetName("solid"))
+        case Crackable(0) => Bitmap(AssetName("crackable"))
+        case Crackable(1) => Bitmap(AssetName("cracked once"))
+        case Crackable(2) => Bitmap(AssetName("cracked twice"))
+        case _ => Bitmap(AssetName("unknown"))
       }
-      
+      Graphic(
+        bounds = Rectangle(0, 0, tileSize, tileSize),
+        depth = 1,
+        material = bitmap
+      )
 
     val tiles = Batch.fromSet(
       (for ((x, y), tile) <- model.floor yield

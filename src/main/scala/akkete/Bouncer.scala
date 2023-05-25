@@ -23,6 +23,13 @@ object Bouncer extends IndigoGame[Unit, Unit, Model, ViewModel]:
         GameConfig.default
           .withViewport(1100, 800)
       )
+      .withAssets(
+        AssetType.Image(AssetName("unknown"), AssetPath("assets/Unknown-01.png")),
+        AssetType.Image(AssetName("solid"), AssetPath("assets/Solid-01.png")),
+        AssetType.Image(AssetName("crackable"), AssetPath("assets/Crackable-01.png")),
+        AssetType.Image(AssetName("cracked once"), AssetPath("assets/CrackedOnce-01.png")),
+        AssetType.Image(AssetName("cracked twice"), AssetPath("assets/CrackedTwice-01.png")),
+      )
     )
 
   def initialModel(startupData: Unit): Outcome[Model] =
