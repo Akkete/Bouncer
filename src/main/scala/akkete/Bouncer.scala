@@ -83,8 +83,8 @@ case class Model(
 
 object Model {
   def test: Model =
-    val width = 50
-    val height = 30
+    val width = 32
+    val height = 28
     Model(
       seconds = Seconds(0),
       player = Player(9, 9, 0, 0),
