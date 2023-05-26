@@ -6,12 +6,12 @@ import indigo.scenes.*
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 @JSExportTopLevel("IndigoGame")
-object Bouncer extends IndigoGame[Unit, Unit, Model, ViewModel]:
+object Bouncer extends IndigoGame[Unit, Dice, Model, ViewModel]:
 
   def initialScene(bootData: Unit): Option[SceneName] =
     None
 
-  def scenes(bootData: Unit): NonEmptyList[Scene[Unit, Model, ViewModel]] =
+  def scenes(bootData: Unit): NonEmptyList[Scene[Dice, Model, ViewModel]] =
     NonEmptyList(GameScene)
 
   val eventFilters: EventFilters =
@@ -28,34 +28,34 @@ object Bouncer extends IndigoGame[Unit, Unit, Model, ViewModel]:
       )
     )
 
-  def initialModel(startupData: Unit): Outcome[Model] =
-    Outcome(Model.test)
+  def initialModel(startupData: Dice): Outcome[Model] =
+    Outcome(Model.test(startupData))
 
-  def initialViewModel(startupData: Unit, model: Model): Outcome[ViewModel] =
+  def initialViewModel(startupData: Dice, model: Model): Outcome[ViewModel] =
     Outcome(ViewModel(NoDirection, GameViewport(1100, 800)))
 
   def setup(
       bootData: Unit,
       assetCollection: AssetCollection,
       dice: Dice
-  ): Outcome[Startup[Unit]] =
-    Outcome(Startup.Success(()))
+  ): Outcome[Startup[Dice]] =
+    Outcome(Startup.Success((dice)))
 
   def updateModel(
-      context: FrameContext[Unit],
+      context: FrameContext[Dice],
       model: Model
   ): GlobalEvent => Outcome[Model] =
     _ => Outcome(model)
 
   def updateViewModel(
-      context: FrameContext[Unit],
+      context: FrameContext[Dice],
       model: Model,
       viewModel: ViewModel
   ): GlobalEvent => Outcome[ViewModel] =
     _ => Outcome(viewModel)
 
   def present(
-      context: FrameContext[Unit],
+      context: FrameContext[Dice],
       model: Model,
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
@@ -64,10 +64,12 @@ object Bouncer extends IndigoGame[Unit, Unit, Model, ViewModel]:
 
 case class Model(
   seconds: Seconds,
+  dice: Dice,
   player: Player,
   floor: Map[(Int, Int), Tile],
   width: Int,
   height: Int,
+  goalAreas: Vector[GoalArea]
   ) {
     def turn(input: Direction, seconds: Seconds): Model = 
       val landingEffect = 
@@ -81,17 +83,47 @@ case class Model(
           x, y, dx, dy, 
           dead = player.dead || landingEffect.deadly
         )
+      val updatedGoals = 
+        landingEffect.goal.filter(goalAreas(_).active) 
+          .map {scoredGoal => 
+            val gas = goalAreas.zipWithIndex.map((ga, id) =>
+              if (id == scoredGoal) {ga.deactivate} else {ga.reduceCooldow}
+            )
+            val ready = 
+              gas.zipWithIndex.filter {(ga, id) =>
+                ga.cooldown == 0 && !ga.active
+              }
+            val next = 
+              if ready.isEmpty then None else 
+                Some(ready(dice.rollFromZero(ready.length)))
+            next map {
+              (nx, id) => gas.updated(id, nx.copy(active = true))
+            } getOrElse {gas}
+          } getOrElse {
+            if (goalAreas.exists(_.active)) {
+              goalAreas
+            } else {
+              goalAreas.map(_.reduceCooldow)
+            }
+          }
       val updatedFloor =  
         floor.updated((player.x, player.y), landingEffect.tile)
-      this.copy(seconds, updatedPlayer, updatedFloor)
+      this.copy(seconds, player = updatedPlayer, floor = updatedFloor, goalAreas = updatedGoals)
   }
 
 object Model {
-  def test: Model =
+  def test(dice: Dice): Model =
     val width = 36
     val height = 28
+    val goalAreas = Vector(
+      GoalArea(false, 1, 1),
+      GoalArea(true,  0, 1),
+      GoalArea(false, 1, 1),
+      GoalArea(false, 1, 1),
+    )
     Model(
       seconds = Seconds(0),
+      dice = dice,
       player = Player(9, 9, 0, 0),
       width = width,
       height = height,
@@ -101,6 +133,16 @@ object Model {
               (i, j) -> Crackable(2)
             } else if (i < 2 || i >= width-2 || j < 2 || j >= height-2) {
               (i, j) -> Crackable(1)
+            } else if (i < 4 || i >= width-4 || j < 4 || j >= height-4) {
+              (i, j) -> Crackable(0)
+            } else if ((i < 7) && (j < 7)) {
+              (i, j) -> Goal(0)
+            } else if ((i < 7) && (j >= height-7)) {
+              (i, j) -> Goal(1)
+            } else if ((i >= width-7) && (j >= height-7)) {
+              (i, j) -> Goal(2)
+            } else if ((i >= width-7) && (j < 7)) {
+              (i, j) -> Goal(3)
             } else if (i < 8 || i >= width-8 || j < 8 || j >= height-8) {
               (i, j) -> Crackable(0)
             } else if (i > 12 && i <= 16) {
@@ -113,18 +155,19 @@ object Model {
               (i, j) -> Booster(Right, 2)
             } else if (i==21) {
               (i, j) -> Booster(Right, 1)
-            } else if (i==22) {
-              (i, j) -> Booster(Left, 1)
             } else if (i==23) {
-              (i, j) -> Booster(Left, 2)
+              (i, j) -> Booster(Left, 1)
             } else if (i==24) {
-              (i, j) -> Booster(Left, 3)
+              (i, j) -> Booster(Left, 2)
             } else if (i==25) {
+              (i, j) -> Booster(Left, 3)
+            } else if (i==26) {
               (i, j) -> Booster(Left, 4)
             } else {
               (i, j) -> Solid
             }
-        ).toMap
+        ).toMap,
+    goalAreas = goalAreas
     )
 }
 
@@ -135,11 +178,12 @@ abstract class Tile {
 }
 
 case class LandingEffect(
-  tile: Tile, 
-  dx: Int = 0, 
-  dy: Int = 0, 
-  deadly: Boolean = false
-)
+    tile: Tile, 
+    dx: Int = 0, 
+    dy: Int = 0, 
+    deadly: Boolean = false,
+    goal: Option[Int] = None
+  )
 
 case object Solid extends Tile
 case object Fall extends Tile {
@@ -161,6 +205,19 @@ case class Booster(direction: Direction, boost: Int) extends Tile {
   override def landingEffect(player: Player): LandingEffect =
     LandingEffect(this, direction.dx * boost, direction.dy * boost)
 }
+case class Goal(goalAreaId: Int) extends Tile {
+  override def landingEffect(player: Player): LandingEffect =
+    LandingEffect(this, goal = Some(goalAreaId))
+}
+
+case class GoalArea(
+    active: Boolean,
+    cooldown: Int,
+    maxCooldown: Int
+  ) {
+    def reduceCooldow: GoalArea = this.copy(cooldown = cooldown - 1 max 0)
+    def deactivate: GoalArea = this.copy(active = false, cooldown = maxCooldown)
+  }
 
 case class ViewModel(
   currentInput: Direction,

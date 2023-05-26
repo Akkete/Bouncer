@@ -5,7 +5,7 @@ import indigo.scenes.*
 import indigo.shared.materials.Material.*
 
 
-object GameScene extends Scene[Unit, Model, ViewModel]:
+object GameScene extends Scene[Dice, Model, ViewModel]:
 
   type SceneModel     = Model
   type SceneViewModel = ViewModel
@@ -26,7 +26,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     Set()
 
   def updateModel(
-      context: SceneContext[Unit],
+      context: SceneContext[Dice],
       model: Model
   ): GlobalEvent => Outcome[Model] =
     case FrameTick if context.running - model.seconds > Seconds(1.45)=>
@@ -37,7 +37,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     case _ => Outcome(model)
 
   def updateViewModel(
-      context: SceneContext[Unit],
+      context: SceneContext[Dice],
       model: Model,
       viewModel: ViewModel
   ): GlobalEvent => Outcome[ViewModel] =
@@ -51,7 +51,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     case _ => Outcome(viewModel)
 
   def present(
-      context: SceneContext[Unit],
+      context: SceneContext[Dice],
       model: Model,
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
@@ -94,6 +94,8 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       tile match {
         case Fall              => (0, 0)
         case Solid             => (0, 1)
+        case Goal(id)          => 
+          (if(model.goalAreas(id).active) then 2 else 1, 1)
         case Crackable(0)      => (0, 2)
         case Crackable(1)      => (1, 2)
         case Crackable(2)      => (2, 2)
