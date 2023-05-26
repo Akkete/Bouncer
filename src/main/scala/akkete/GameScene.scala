@@ -76,11 +76,19 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     val playerX = model.player.x * timeFraction.toDouble + (model.player.x - model.player.dx) * (1 - timeFraction.toDouble)
     val playerY = model.player.y * timeFraction.toDouble + (model.player.y - model.player.dy) * (1 - timeFraction.toDouble)
 
-    val viewPortWidthTiles = viewModel.viewport.width / tileSize + 2
-    val viewPortHeightTiles = viewModel.viewport.height / tileSize + 2
+    val viewPortWidthTiles = viewModel.viewport.width / tileSize + 1
+    val viewPortHeightTiles = viewModel.viewport.height / tileSize + 1
 
-    val cameraX = (viewPortWidthTiles.toDouble/2 - 2) max playerX min (model.width + 2 - viewPortWidthTiles.toDouble/2)
-    val cameraY = (viewPortHeightTiles.toDouble/2 - 2) max playerY min (model.height + 2 - viewPortHeightTiles.toDouble/2)
+    val cameraX = if (viewPortWidthTiles < model.width + 4) {
+       (viewPortWidthTiles.toDouble/2 - 4) max playerX min (model.width + 2 - viewPortWidthTiles.toDouble/2)
+      } else {
+        (model.width.toDouble/2) - 1
+      }
+    val cameraY = if (viewPortWidthTiles < model.width + 4) {
+        (viewPortHeightTiles.toDouble/2 - 4) max playerY min (model.height + 2 - viewPortHeightTiles.toDouble/2)
+      } else {
+        (model.height.toDouble/2) - 1
+      }
 
     def tileGraphic(tile: Tile): (Int, Int) = 
       tile match {
@@ -96,8 +104,8 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     val tiles = CloneTiles(
       CloneId("tile"),
       Batch.fromSet(
-        (for x <- cameraX.toInt - viewPortWidthTiles/2 to cameraX.toInt + viewPortWidthTiles/2;
-             y <- cameraY.toInt - viewPortHeightTiles/2 to cameraY.toInt + viewPortHeightTiles/2 yield
+        (for x <- cameraX.toInt - viewPortWidthTiles/2 to cameraX.toInt + viewPortWidthTiles/2 + 1;
+             y <- cameraY.toInt - viewPortHeightTiles/2 to cameraY.toInt + viewPortHeightTiles/2 + 1 yield
           val tile = model.floor.getOrElse((x, y), Fall)
           val (col, row) = tileGraphic(tile)
           CloneTileData(
