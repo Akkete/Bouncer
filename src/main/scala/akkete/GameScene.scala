@@ -142,14 +142,16 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
       radius = (playerSize/2 * (0.4 + 0.6 * (1 - bounceAnimation.at(timeFraction)))).toInt,
       fill = Fill.Color(RGBA.Black.withAlpha(0.5))
     ).scaleBy(1, 0.8)
+
+    val previewModel = model.turn(viewModel.currentInput, model.seconds + turnTime)
     val helper = Shape.Line(
       Point(
         tileSize/2 + model.player.x * gridSize, 
         tileSize/2 + model.player.y * gridSize
       ),
       Point(
-        tileSize/2 + (model.player.x + model.player.dx + viewModel.currentInput.dx) * gridSize, 
-        tileSize/2 + (model.player.y + model.player.dy + viewModel.currentInput.dy) * gridSize
+        tileSize/2 + previewModel.player.x * gridSize, 
+        tileSize/2 + previewModel.player.y * gridSize
       ),
       Stroke(width = 2, color = RGBA.Blue)
     )
