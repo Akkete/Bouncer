@@ -103,6 +103,8 @@ object Model {
               (i, j) -> Crackable(1)
             } else if (i < 8 || i >= width-8 || j < 8 || j >= height-8) {
               (i, j) -> Crackable(0)
+            } else if (i >= 12 && i < 16) {
+              (i, j) -> Sand
             } else {
               (i, j) -> Solid
             }

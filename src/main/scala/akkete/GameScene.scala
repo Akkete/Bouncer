@@ -97,6 +97,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
         case Crackable(0) => (0, 2)
         case Crackable(1) => (1, 2)
         case Crackable(2) => (2, 2)
+        case Sand         => (2, 0)
         case _            => (1, 0)
       }
       
