@@ -127,7 +127,12 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
         (tileSize/2 + playerY * gridSize).toInt - (bounceAnimation.at(timeFraction) * bounceHeight).toInt
       ),
       radius = playerSize/2,
-      fill = Fill.Color(RGBA.Red)
+      fill = 
+        if (model.player.dead) {
+          Fill.Color(RGBA.Blue)
+        } else {
+          Fill.Color(RGBA.Red)
+        }
     )
     val shadow = Shape.Circle(
       center = Point(
