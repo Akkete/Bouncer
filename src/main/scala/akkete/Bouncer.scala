@@ -136,7 +136,10 @@ case class Crackable(cracks: Int) extends Tile {
 }
 case object Sand extends Tile {
   override def landingEffect(player: Player): LandingEffect =
-    LandingEffect(this, -player.dx/2, -player.dy/2)
+    LandingEffect(this, 
+    -(player.dx+player.dx.sign)/2, 
+    -(player.dy+player.dy.sign)/2
+    )
 }
 
 case class ViewModel(
