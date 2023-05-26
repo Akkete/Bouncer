@@ -32,7 +32,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     case FrameTick if context.running - model.seconds > Seconds(1.45)=>
       val inputDirection = context.keyboard.lastKeyHeldDown
         .flatMap(directionKeys.get(_))
-        .headOption.getOrElse(NoInput)
+        .headOption.getOrElse(NoDirection)
       Outcome(model.turn(seconds = context.running, input = inputDirection))
     case _ => Outcome(model)
 
@@ -44,7 +44,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     case FrameTick =>
       val inputDirection = context.keyboard.lastKeyHeldDown
         .flatMap(directionKeys.get(_))
-        .headOption.getOrElse(NoInput)
+        .headOption.getOrElse(NoDirection)
       Outcome(viewModel.copy(currentInput = inputDirection))
     case ViewportResize(viewport) =>
       Outcome(viewModel.copy(viewport = viewport))
@@ -92,13 +92,17 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
 
     def tileGraphic(tile: Tile): (Int, Int) = 
       tile match {
-        case Fall         => (0, 0)
-        case Solid        => (0, 1)
-        case Crackable(0) => (0, 2)
-        case Crackable(1) => (1, 2)
-        case Crackable(2) => (2, 2)
-        case Sand         => (2, 0)
-        case _            => (1, 0)
+        case Fall              => (0, 0)
+        case Solid             => (0, 1)
+        case Crackable(0)      => (0, 2)
+        case Crackable(1)      => (1, 2)
+        case Crackable(2)      => (2, 2)
+        case Sand              => (2, 0)
+        case Booster(Up, n)    => (0, (2 + n) min 6)
+        case Booster(Down, n)  => (1, (2 + n) min 6)
+        case Booster(Left, n)  => (2, (2 + n) min 6)
+        case Booster(Right, n) => (3, (2 + n) min 6)
+        case _                 => (1, 0)
       }
       
 
@@ -168,7 +172,7 @@ object GameScene extends Scene[Unit, Model, ViewModel]:
     )
 
 
-val directionKeys: Map[Key, Input] = 
+val directionKeys: Map[Key, Direction] = 
   Map(
     Key.UP_ARROW    -> Up,
     Key.DOWN_ARROW  -> Down,

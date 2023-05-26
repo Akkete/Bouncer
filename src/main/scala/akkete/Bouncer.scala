@@ -32,7 +32,7 @@ object Bouncer extends IndigoGame[Unit, Unit, Model, ViewModel]:
     Outcome(Model.test)
 
   def initialViewModel(startupData: Unit, model: Model): Outcome[ViewModel] =
-    Outcome(ViewModel(NoInput, GameViewport(1100, 800)))
+    Outcome(ViewModel(NoDirection, GameViewport(1100, 800)))
 
   def setup(
       bootData: Unit,
@@ -69,7 +69,7 @@ case class Model(
   width: Int,
   height: Int,
   ) {
-    def turn(input: Input, seconds: Seconds): Model = 
+    def turn(input: Direction, seconds: Seconds): Model = 
       val landingEffect = 
         floor.getOrElse((player.x, player.y), Fall).landingEffect(player)
       val dx = player.dx + input.dx + landingEffect.dx
@@ -88,7 +88,7 @@ case class Model(
 
 object Model {
   def test: Model =
-    val width = 32
+    val width = 36
     val height = 28
     Model(
       seconds = Seconds(0),
@@ -103,8 +103,24 @@ object Model {
               (i, j) -> Crackable(1)
             } else if (i < 8 || i >= width-8 || j < 8 || j >= height-8) {
               (i, j) -> Crackable(0)
-            } else if (i >= 12 && i < 16) {
+            } else if (i > 12 && i <= 16) {
               (i, j) -> Sand
+            } else if (i==18) {
+              (i, j) -> Booster(Right, 4)
+            } else if (i==19) {
+              (i, j) -> Booster(Right, 3)
+            } else if (i==20) {
+              (i, j) -> Booster(Right, 2)
+            } else if (i==21) {
+              (i, j) -> Booster(Right, 1)
+            } else if (i==22) {
+              (i, j) -> Booster(Left, 1)
+            } else if (i==23) {
+              (i, j) -> Booster(Left, 2)
+            } else if (i==24) {
+              (i, j) -> Booster(Left, 3)
+            } else if (i==25) {
+              (i, j) -> Booster(Left, 4)
             } else {
               (i, j) -> Solid
             }
@@ -141,28 +157,32 @@ case object Sand extends Tile {
     -(player.dy+player.dy.sign)/2
     )
 }
+case class Booster(direction: Direction, boost: Int) extends Tile {
+  override def landingEffect(player: Player): LandingEffect =
+    LandingEffect(this, direction.dx * boost, direction.dy * boost)
+}
 
 case class ViewModel(
-  currentInput: Input,
+  currentInput: Direction,
   viewport: GameViewport
 )
 
-abstract class Input{
+abstract class Direction{
   def dx: Int = 0
   def dy: Int = 0
 }
 
-case object NoInput extends Input
-case object Up extends Input {
+case object NoDirection extends Direction
+case object Up extends Direction {
   override def dy = -1
 }
-case object Down extends Input {
+case object Down extends Direction {
   override def dy = 1
 }
-case object Left extends Input {
+case object Left extends Direction {
   override def dx = -1
 }
-case object Right extends Input {
+case object Right extends Direction {
   override def dx = 1
 }
 
