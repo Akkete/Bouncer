@@ -70,15 +70,20 @@ case class Model(
   height: Int,
   ) {
     def turn(input: Input, seconds: Seconds): Model = 
-      val dx = player.dx + input.dx
-      val dy = player.dy + input.dy 
+      val landingEffect = 
+        floor.getOrElse((player.x, player.y), Fall).landingEffect(player)
+      val dx = player.dx + input.dx + landingEffect.dx
+      val dy = player.dy + input.dy + landingEffect.dy
       val x  = player.x + dx
       val y  = player.y + dy
-      val updatedFloor = 
-        floor.updatedWith((player.x, player.y))(x => 
-          x.map(_.landingEffect)
+      val updatedPlayer = 
+        Player(
+          x, y, dx, dy, 
+          dead = player.dead || landingEffect.deadly
         )
-      this.copy(seconds, Player(x, y, dx, dy), updatedFloor)
+      val updatedFloor =  
+        floor.updated((player.x, player.y), landingEffect.tile)
+      this.copy(seconds, updatedPlayer, updatedFloor)
   }
 
 object Model {
@@ -105,17 +110,31 @@ object Model {
     )
 }
 
-case class Player(x: Int, y: Int, dx: Int, dy: Int)
+case class Player(x: Int, y: Int, dx: Int, dy: Int, dead: Boolean = false)
 
 abstract class Tile {
-  def landingEffect: Tile = this
+  def landingEffect(player: Player): LandingEffect = LandingEffect(this)
 }
 
-case object Fall extends Tile
+case class LandingEffect(
+  tile: Tile, 
+  dx: Int = 0, 
+  dy: Int = 0, 
+  deadly: Boolean = false
+)
+
 case object Solid extends Tile
+case object Fall extends Tile {
+  override def landingEffect(player: Player): LandingEffect = 
+    LandingEffect(this, deadly = true)
+}
 case class Crackable(cracks: Int) extends Tile {
-  override def landingEffect: Tile = 
-    if (cracks < 2) Crackable(cracks + 1) else Fall
+  override def landingEffect(player: Player): LandingEffect = 
+    LandingEffect(if (cracks < 2) Crackable(cracks + 1) else Fall)
+}
+case object Sand extends Tile {
+  override def landingEffect(player: Player): LandingEffect =
+    LandingEffect(this, -player.dx/2, -player.dy/2)
 }
 
 case class ViewModel(
