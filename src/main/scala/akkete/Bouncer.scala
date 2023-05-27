@@ -116,10 +116,10 @@ object Model {
     val width = 36
     val height = 28
     val goalAreas = Vector(
-      GoalArea(false, 1, 1),
-      GoalArea(true,  0, 1),
-      GoalArea(false, 1, 1),
-      GoalArea(false, 1, 1),
+      GoalArea(false, 1, 2),
+      GoalArea(true,  0, 2),
+      GoalArea(false, 1, 2),
+      GoalArea(false, 1, 2),
     )
     Model(
       seconds = Seconds(0),
