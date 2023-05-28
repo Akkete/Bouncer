@@ -29,7 +29,7 @@ object Bouncer extends IndigoGame[Unit, Dice, Model, ViewModel]:
     )
 
   def initialModel(startupData: Dice): Outcome[Model] =
-    Outcome(Model.test(startupData))
+    Outcome(Model.test(seconds = Seconds(0), dice = startupData))
 
   def initialViewModel(startupData: Dice, model: Model): Outcome[ViewModel] =
     Outcome(ViewModel(NoDirection, GameViewport(1100, 800)))
@@ -124,7 +124,7 @@ case class Model(
   }
 
 object Model {
-  def test(dice: Dice): Model =
+  def test(seconds: Seconds, dice: Dice): Model =
     val width = 36
     val height = 28
     val goalAreas = Vector(
@@ -134,7 +134,7 @@ object Model {
       GoalArea(false, 1, 2),
     )
     Model(
-      seconds = Seconds(0),
+      seconds = seconds,
       dice = dice,
       player = Player(9, 9, 0, 0),
       score = 0,

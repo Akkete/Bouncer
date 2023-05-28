@@ -29,11 +29,13 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       context: SceneContext[Dice],
       model: Model
   ): GlobalEvent => Outcome[Model] =
-    case FrameTick if context.running - model.seconds > Seconds(1.45)=>
+    case FrameTick if context.running - model.seconds > Seconds(1.45) =>
       val inputDirection = context.keyboard.lastKeyHeldDown
         .flatMap(directionKeys.get(_))
         .headOption.getOrElse(NoDirection)
       Outcome(model.turn(seconds = context.running, input = inputDirection))
+    case KeyboardEvent.KeyDown(Key.KEY_R) =>
+      Outcome(Model.test(context.running, context.dice))
     case _ => Outcome(model)
 
   def updateViewModel(
