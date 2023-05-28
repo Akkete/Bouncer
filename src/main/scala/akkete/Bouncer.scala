@@ -66,6 +66,7 @@ case class Model(
   seconds: Seconds,
   dice: Dice,
   player: Player,
+  crumbles: Set[(Int, Int)] = Set.empty,
   score: Int,
   scoreGoal: Int,
   floor: Map[(Int, Int), Tile],
@@ -119,7 +120,25 @@ case class Model(
           else 
             score,
         floor = updatedFloor, 
-        goalAreas = updatedGoals
+        goalAreas = updatedGoals,
+        crumbles = 
+          if landingEffect.crumble then 
+            crumbles ++ neighbourhood(player.x, player.y)
+          else 
+            crumbles
+      )
+    
+    def crumble: Model =
+      val crumbleEffects = crumbles.map(p => p -> floor.getOrElse(p, Fall).crumbleEffect).toMap
+      val updatedTiles = crumbleEffects.view.mapValues(_.tile)
+      val updatedCrumbles = 
+        crumbleEffects
+          .filter(_._2.crumble)
+          .keySet
+          .flatMap((x, y) => neighbourhood(x, y))
+      this.copy(
+        floor = floor ++ updatedTiles,
+        crumbles = updatedCrumbles
       )
   }
 
@@ -187,17 +206,24 @@ object Model {
 
 case class Player(x: Int, y: Int, dx: Int, dy: Int, dead: Boolean = false)
 
+case class LandingEffect(
+  tile: Tile, 
+  dx: Int = 0, 
+  dy: Int = 0, 
+  deadly: Boolean = false,
+  goal: Option[Int] = None,
+  crumble: Boolean = false,
+  )
+
+case class CrumbleEffect(
+  tile: Tile,
+  crumble: Boolean = false,
+)
+  
 abstract class Tile {
   def landingEffect(player: Player): LandingEffect = LandingEffect(this)
+  def crumbleEffect: CrumbleEffect = CrumbleEffect(this)
 }
-
-case class LandingEffect(
-    tile: Tile, 
-    dx: Int = 0, 
-    dy: Int = 0, 
-    deadly: Boolean = false,
-    goal: Option[Int] = None
-  )
 
 case object Solid extends Tile
 case object Fall extends Tile {
@@ -206,7 +232,15 @@ case object Fall extends Tile {
 }
 case class Crackable(cracks: Int) extends Tile {
   override def landingEffect(player: Player): LandingEffect = 
-    LandingEffect(if (cracks < 2) Crackable(cracks + 1) else Fall)
+    if (cracks < 2) then
+      LandingEffect(Crackable(cracks + 1)) 
+    else 
+      LandingEffect(Fall, crumble = true)
+  override def crumbleEffect: CrumbleEffect =
+    if (cracks < 2) then
+      CrumbleEffect(Crackable(cracks + 1)) 
+    else 
+      CrumbleEffect(Fall, crumble = true)
 }
 case object Sand extends Tile {
   override def landingEffect(player: Player): LandingEffect =
@@ -257,3 +291,5 @@ case object Right extends Direction {
   override def dx = 1
 }
 
+def neighbourhood(x: Int, y: Int): Set[(Int, Int)] =
+  Set((x, y+1), (x, y-1), (x-1, y), (x+1, y))

@@ -34,6 +34,8 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         .flatMap(directionKeys.get(_))
         .headOption.getOrElse(NoDirection)
       Outcome(model.turn(seconds = context.running, input = inputDirection))
+    case FrameTick if (context.running - model.seconds) % Seconds(0.2) > Seconds(0.1) =>
+      Outcome(model.crumble)
     case KeyboardEvent.KeyDown(Key.KEY_R) =>
       Outcome(Model.test(context.running, context.dice))
     case _ => Outcome(model)
