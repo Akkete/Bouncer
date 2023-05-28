@@ -162,12 +162,25 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       Stroke(width = 2, color = RGBA.Blue)
     )
 
-    Outcome(
-      (SceneUpdateFragment(tiles).addCloneBlanks(tileCloneBlank)
+    val scoreDisplay = TextBox(s"${model.score}/${model.scoreGoal}", 128, 64)
+        .withFontFamily(FontFamily.sansSerif)
+        .withColor(RGBA.White)
+        .withFontSize(Pixels(32))
+        .withStroke(TextStroke(RGBA.Black, Pixels(4)))
+        .bold
+        .alignCenter
+        .moveTo(
+          (gridSize/2 + tileSize/2 + cameraX * gridSize - 64).toInt,
+          (gridSize/2 + tileSize/2 + cameraY * gridSize - viewModel.viewport.height/2).toInt
+        )
+
+    Outcome((
+      SceneUpdateFragment(tiles).addCloneBlanks(tileCloneBlank)
       |+| SceneUpdateFragment(shadow)
       |+| SceneUpdateFragment(helper)
-      |+| SceneUpdateFragment(player))
-      .withCamera(Camera.LookAt(Point(
+      |+| SceneUpdateFragment(player)
+      |+| SceneUpdateFragment(scoreDisplay)
+      ).withCamera(Camera.LookAt(Point(
         (gridSize/2 + tileSize/2 + cameraX * gridSize).toInt,
         (gridSize/2 + tileSize/2 + cameraY * gridSize).toInt
         )))

@@ -66,6 +66,8 @@ case class Model(
   seconds: Seconds,
   dice: Dice,
   player: Player,
+  score: Int,
+  scoreGoal: Int,
   floor: Map[(Int, Int), Tile],
   width: Int,
   height: Int,
@@ -108,7 +110,17 @@ case class Model(
           }
       val updatedFloor =  
         floor.updated((player.x, player.y), landingEffect.tile)
-      this.copy(seconds, player = updatedPlayer, floor = updatedFloor, goalAreas = updatedGoals)
+      this.copy(
+        seconds, 
+        player = updatedPlayer, 
+        score = 
+          if landingEffect.goal.map(goalAreas(_).active).getOrElse(false) then 
+            score + 1 
+          else 
+            score,
+        floor = updatedFloor, 
+        goalAreas = updatedGoals
+      )
   }
 
 object Model {
@@ -125,6 +137,8 @@ object Model {
       seconds = Seconds(0),
       dice = dice,
       player = Player(9, 9, 0, 0),
+      score = 0,
+      scoreGoal = 12,
       width = width,
       height = height,
       floor = (
