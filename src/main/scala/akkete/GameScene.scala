@@ -39,7 +39,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       case FrameTick if (context.running - model.seconds) % (crumbleTime*2) > crumbleTime =>
         Outcome(model.crumble)
       case KeyboardEvent.KeyDown(Key.KEY_R) =>
-        Outcome(Model.test(context.running, context.dice))
+        Outcome(Model.arena1(context.running, context.dice))
       case _ => Outcome(model)
     }
 

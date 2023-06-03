@@ -199,6 +199,68 @@ object Model {
         GoalArea(false, 1, 2),
       )
     )
+  def arena1(seconds: Seconds, dice: Dice): Model = 
+    val width = 36
+    val height = 28
+    val goalPositions = Vector(
+        ( 4 + dice.rollFromZero(3), 4 + dice.rollFromZero(3) ),
+        ( 6 + dice.rollFromZero(3), height-3-10 + dice.rollFromZero(3) ),
+        ( width/2-1 + dice.rollFromZero(3), height/2-1 + dice.rollFromZero(3) ),
+        ( width-3-6 + dice.rollFromZero(3), 10 + dice.rollFromZero(3) ),
+        ( width-3-4 + dice.rollFromZero(3), height-3-4 + dice.rollFromZero(3) ),
+      )
+    val holePositions = Vector(
+        (8-1 + dice.rollFromZero(3), 8-1 + dice.rollFromZero(3)), 
+        (width-6-8 + dice.rollFromZero(3), height-6-8-1 + dice.rollFromZero(3)),
+      )
+    Model(
+      seconds = seconds,
+      dice = dice,
+      player = Player(goalPositions(2)._1+1, goalPositions(2)._2+1, 0, 0),
+      score = 0,
+      scoreGoal = 12,
+      width = width,
+      height = height,
+      floor = 
+        (
+          for i <- 0 until width; j <- 0 until height yield
+            if (j < 3 && i >= 5 && i < width-5) {
+              (i, j) -> Booster(Down, 3-j)
+            } else if (j >= height-3 && i >= 5 && i < width-5) {
+              (i, j) -> Booster(Up, 3-height+j+1)
+            } else if (i < 3 && j >= 5 && j < height-5) {
+              (i, j) -> Booster(Right, 3-i)
+            } else if (i >= width-3 && j >= 5 && j < height-5) {
+              (i, j) -> Booster(Left, 3-width+i+1)
+            } else {
+              (i, j) -> Crackable(0)
+            }
+        ).toMap 
+        ++ 
+        (
+          for (x, y) <- holePositions; 
+            i <- 0 until 6; j <- 0 until 6 yield
+              if (i < 2 || i >= 6-2 || j < 2 || j >= 6-2) {
+                (i+x, j+y) -> Sand
+              } else {
+                (i+x, j+y) -> Fall
+              }
+        ).toMap
+        ++ 
+        (
+          for ((x, y), id) <- goalPositions.zipWithIndex; 
+            i <- 0 until 3; j <- 0 until 3 yield
+            (i+x, j+y) -> Goal(id)
+        ).toMap
+      ,
+    goalAreas = Vector(
+        GoalArea(true,  0, 5),
+        GoalArea(false, 1, 5),
+        GoalArea(false, 2, 3),
+        GoalArea(false, 3, 5),
+        GoalArea(false, 4, 5),
+      )
+    )
 }
 
 case class Player(x: Int, y: Int, dx: Int, dy: Int, dead: Boolean = false)
