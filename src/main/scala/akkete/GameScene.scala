@@ -29,16 +29,19 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       context: SceneContext[Dice],
       model: Model
   ): GlobalEvent => Outcome[Model] =
-    case FrameTick if context.running - model.seconds > Seconds(1.45) =>
-      val inputDirection = context.keyboard.lastKeyHeldDown
-        .flatMap(directionKeys.get(_))
-        .headOption.getOrElse(NoDirection)
-      Outcome(model.turn(seconds = context.running, input = inputDirection))
-    case FrameTick if (context.running - model.seconds) % Seconds(0.2) > Seconds(0.1) =>
-      Outcome(model.crumble)
-    case KeyboardEvent.KeyDown(Key.KEY_R) =>
-      Outcome(Model.test(context.running, context.dice))
-    case _ => Outcome(model)
+    val crumbleTime = Seconds(1.45) / 8
+    {
+      case FrameTick if context.running - model.seconds > Seconds(1.45) =>
+        val inputDirection = context.keyboard.lastKeyHeldDown
+          .flatMap(directionKeys.get(_))
+          .headOption.getOrElse(NoDirection)
+        Outcome(model.turn(seconds = context.running, input = inputDirection))
+      case FrameTick if (context.running - model.seconds) % (crumbleTime*2) > crumbleTime =>
+        Outcome(model.crumble)
+      case KeyboardEvent.KeyDown(Key.KEY_R) =>
+        Outcome(Model.test(context.running, context.dice))
+      case _ => Outcome(model)
+    }
 
   def updateViewModel(
       context: SceneContext[Dice],
