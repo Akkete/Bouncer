@@ -144,12 +144,6 @@ object Model {
   def test(seconds: Seconds, dice: Dice): Model =
     val width = 36
     val height = 28
-    val goalAreas = Vector(
-      GoalArea(false, 1, 2),
-      GoalArea(true,  0, 2),
-      GoalArea(false, 1, 2),
-      GoalArea(false, 1, 2),
-    )
     Model(
       seconds = seconds,
       dice = dice,
@@ -198,7 +192,12 @@ object Model {
               (i, j) -> Solid
             }
         ).toMap,
-    goalAreas = goalAreas
+    goalAreas = Vector(
+        GoalArea(false, 1, 2),
+        GoalArea(true,  0, 2),
+        GoalArea(false, 1, 2),
+        GoalArea(false, 1, 2),
+      )
     )
 }
 
