@@ -204,14 +204,14 @@ object Model {
     val height = 28
     val goalPositions = Vector(
         ( 4 + dice.rollFromZero(3), 4 + dice.rollFromZero(3) ),
-        ( 6 + dice.rollFromZero(3), height-3-10 + dice.rollFromZero(3) ),
-        ( width/2-1 + dice.rollFromZero(3), height/2-1 + dice.rollFromZero(3) ),
-        ( width-3-6 + dice.rollFromZero(3), 10 + dice.rollFromZero(3) ),
-        ( width-3-4 + dice.rollFromZero(3), height-3-4 + dice.rollFromZero(3) ),
+        ( 6 + dice.rollFromZero(3), height-1-10 + dice.rollFromZero(3) ),
+        ( width/2-1-1 + dice.rollFromZero(2), height/2-1-1 + dice.rollFromZero(2) ),
+        ( width-1-10 + dice.rollFromZero(3), 6 + dice.rollFromZero(3) ),
+        ( width-1-4-4 + dice.rollFromZero(3), height-1-4-4 + dice.rollFromZero(3) ),
       )
     val holePositions = Vector(
-        (8-1 + dice.rollFromZero(3), 8-1 + dice.rollFromZero(3)), 
-        (width-6-8 + dice.rollFromZero(3), height-6-8-1 + dice.rollFromZero(3)),
+        (goalPositions(0)._1+3 max 8, goalPositions(0)._2+3 max 8), 
+        (goalPositions(4)._1-6 min width-1-13, goalPositions(4)._2-6 min height-1-13), 
       )
     Model(
       seconds = seconds,
@@ -224,18 +224,55 @@ object Model {
       floor = 
         (
           for i <- 0 until width; j <- 0 until height yield
-            if (j < 3 && i >= 5 && i < width-5) {
+            if (j < 3 && i >= 4 && i < width-4) {
               (i, j) -> Booster(Down, 3-j)
-            } else if (j >= height-3 && i >= 5 && i < width-5) {
+            } else if (j >= height-3 && i >= 4 && i < width-4) {
               (i, j) -> Booster(Up, 3-height+j+1)
-            } else if (i < 3 && j >= 5 && j < height-5) {
+            } else if (i < 3 && j >= 4 && j < height-4) {
               (i, j) -> Booster(Right, 3-i)
-            } else if (i >= width-3 && j >= 5 && j < height-5) {
+            } else if (i >= width-3 && j >= 4 && j < height-4) {
               (i, j) -> Booster(Left, 3-width+i+1)
-            } else {
+            } else if (i >= 3 && i < width-3 && j >= 3 && j < height-3) {
               (i, j) -> Crackable(0)
+            } else {
+              (i, j) -> Fall
             }
         ).toMap 
+        ++
+        Map(
+          (1, 2) -> Booster(Right, 3),
+          (1, 3) -> Booster(Right, 3),
+          (1, height-1-2) -> Booster(Right, 3),
+          (1, height-1-3) -> Booster(Right, 3),
+          (2, 3) -> Booster(Right, 2),
+          (2, height-1-2) -> Booster(Right, 2),
+          (2, height-1-3) -> Booster(Right, 2),
+          (3, height-1-3) -> Booster(Right, 1),
+          (width-1-1, 2) -> Booster(Left, 3),
+          (width-1-1, 3) -> Booster(Left, 3),
+          (width-1-1, height-1-2) -> Booster(Left, 3),
+          (width-1-1, height-1-3) -> Booster(Left, 3),
+          (width-1-2, 3) -> Booster(Left, 2),
+          (width-1-2, 2) -> Booster(Left, 2),
+          (width-1-2, height-1-3) -> Booster(Left, 2),
+          (width-1-3, 3) -> Booster(Left, 1),
+          (2, 1) -> Booster(Down, 3),
+          (3, 1) -> Booster(Down, 3),
+          (width-1-2, 1) -> Booster(Down, 3),
+          (width-1-3, 1) -> Booster(Down, 3),
+          (3, 2) -> Booster(Down, 2),
+          (2, 2) -> Booster(Down, 2),
+          (width-1-3, 2) -> Booster(Down, 2),
+          (3, 3) -> Booster(Down, 1),
+          (2, height-1-1) -> Booster(Up, 3),
+          (3, height-1-1) -> Booster(Up, 3),
+          (width-1-2, height-1-1) -> Booster(Up, 3),
+          (width-1-3, height-1-1) -> Booster(Up, 3),
+          (3, height-1-2) -> Booster(Up, 2),
+          (width-1-2, height-1-2) -> Booster(Up, 2),
+          (width-1-3, height-1-2) -> Booster(Up, 2),
+          (width-1-3, height-1-3) -> Booster(Up, 1),
+        )
         ++ 
         (
           for (x, y) <- holePositions; 
@@ -256,7 +293,7 @@ object Model {
     goalAreas = Vector(
         GoalArea(true,  0, 5),
         GoalArea(false, 1, 5),
-        GoalArea(false, 2, 3),
+        GoalArea(false, 2, 2),
         GoalArea(false, 3, 5),
         GoalArea(false, 4, 5),
       )
