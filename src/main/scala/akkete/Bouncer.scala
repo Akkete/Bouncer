@@ -267,7 +267,7 @@ object Model {
         None
         ),
       score = 0,
-      scoreGoal = 12,
+      scoreGoal = 50,
       width = width,
       height = height,
       floor = 
