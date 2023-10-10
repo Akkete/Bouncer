@@ -80,22 +80,40 @@ case class Model(
       val landingEffect = ballOption map { ball => 
           floor.getOrElse((ball.x, ball.y), Fall).landingEffect(ball)
       } getOrElse LandingEffect(None)
-      val crumbleEffects = crumbles.map(p => p -> floor.getOrElse(p, Fall).crumbleEffect).toMap
-      val updatedBall = ballOption.map { ball => 
-        ball match {
-          case Player(x, y, dx, dy) => 
-            val ndx = dx + input.dx + landingEffect.dx
-            val ndy = dy + input.dy + landingEffect.dy
-            val nx  = x + ndx
-            val ny  = y + ndy
-            Player(nx, ny, ndx, ndy)
-          case CannonBall(x, y, dx, dy) => 
-            val ndy = dy + landingEffect.dy
-            val ndx = dx + landingEffect.dx
-            val nx  = x + ndx
-            val ny  = y + ndy
-            CannonBall(nx, ny, ndx, ndy)
-        }
+      val crumbleEffects = 
+        crumbles.map(p => p -> floor.getOrElse(p, Fall).crumbleEffect).toMap
+      val updatedBall = if landingEffect.deadly then None else 
+        ballOption.map { ball => 
+          ball match {
+            case Player(x, y, dx, dy) => 
+              val ndx = dx + input.dx + landingEffect.dx
+              val ndy = dy + input.dy + landingEffect.dy
+              val nx  = x + ndx
+              val ny  = y + ndy
+              Player(nx, ny, ndx, ndy)
+            case CannonBall(x, y, dx, dy) => 
+              val ndx = dx + landingEffect.dx
+              val ndy = dy + landingEffect.dy
+              val nx  = x + ndx
+              val ny  = y + ndy
+              CannonBall(nx, ny, ndx, ndy)
+            case Chaser(x, y, dx, dy) =>
+              val direction: Direction = (balls(0) map { player =>
+                val xdiff = player.x - x
+                val ydiff = player.y - y
+                if scala.math.abs((xdiff)) > scala.math.abs((ydiff)) then
+                  if xdiff > 0 then Right else Left
+                else if scala.math.abs((xdiff)) < scala.math.abs((ydiff)) then
+                  if ydiff > 0 then Down else Up
+                else
+                  NoDirection
+              }).getOrElse(NoDirection)
+              val ndx = dx + direction.dx + landingEffect.dx
+              val ndy = dy + direction.dy + landingEffect.dy
+              val nx  = x + ndx
+              val ny  = y + ndy
+              Chaser(nx, ny, ndx, ndy)
+          }
       }
       val updatedGoals = 
         landingEffect.goal.filter(goalAreas(_).active) 
@@ -161,8 +179,8 @@ object Model {
       dice = dice,
       balls = Vector(
         Some(Player(9, 9, 0, 0)),
-        Some(CannonBall(5, 5, 0, 1)),
-        None,
+        Some(CannonBall(21, 5, 1, 1)),
+        Some(Chaser(15, 15, 0, 0)),
         None,
         None,
         None,
@@ -336,8 +354,9 @@ abstract class Ball {
 }
 
 case class Player(x: Int, y: Int, dx: Int, dy: Int) extends Ball
-
 case class CannonBall(x: Int, y: Int, dx: Int, dy: Int) extends Ball
+case class Chaser(x: Int, y: Int, dx: Int, dy: Int) extends Ball
+
 
 case class LandingEffect(
   tileChange: Option[Tile] = None, 
