@@ -261,7 +261,7 @@ object Model {
         None,
         None,
         None,
-        None,
+        Some(Chaser(goalPositions(4)._1+1, goalPositions(4)._2+1, 0, 0)),
         None,
         None,
         None
