@@ -64,8 +64,9 @@ object Bouncer extends IndigoGame[Unit, Dice, Model, ViewModel]:
 
 case class Model(
   seconds: Seconds,
+  part: Int,
   dice: Dice,
-  player: Player,
+  balls: Vector[Option[Ball]],
   crumbles: Set[(Int, Int)] = Set.empty,
   score: Int,
   scoreGoal: Int,
@@ -75,17 +76,27 @@ case class Model(
   goalAreas: Vector[GoalArea]
   ) {
     def turn(input: Direction, seconds: Seconds): Model = 
-      val landingEffect = 
-        floor.getOrElse((player.x, player.y), Fall).landingEffect(player)
-      val dx = player.dx + input.dx + landingEffect.dx
-      val dy = player.dy + input.dy + landingEffect.dy
-      val x  = player.x + dx
-      val y  = player.y + dy
-      val updatedPlayer = 
-        Player(
-          x, y, dx, dy, 
-          dead = player.dead || landingEffect.deadly
-        )
+      val ballOption = balls(part)
+      val landingEffect = ballOption map { ball => 
+          floor.getOrElse((ball.x, ball.y), Fall).landingEffect(ball)
+      } getOrElse LandingEffect(None)
+      val crumbleEffects = crumbles.map(p => p -> floor.getOrElse(p, Fall).crumbleEffect).toMap
+      val updatedBall = ballOption.map { ball => 
+        ball match {
+          case Player(x, y, dx, dy) => 
+            val ndx = dx + input.dx + landingEffect.dx
+            val ndy = dy + input.dy + landingEffect.dy
+            val nx  = x + ndx
+            val ny  = y + ndy
+            Player(nx, ny, ndx, ndy)
+          case CannonBall(x, y, dx, dy) => 
+            val ndy = dy + landingEffect.dy
+            val ndx = dx + landingEffect.dx
+            val nx  = x + ndx
+            val ny  = y + ndy
+            CannonBall(nx, ny, ndx, ndy)
+        }
+      }
       val updatedGoals = 
         landingEffect.goal.filter(goalAreas(_).active) 
           .map {scoredGoal => 
@@ -109,34 +120,34 @@ case class Model(
               goalAreas.map(_.reduceCooldow)
             }
           }
-      val updatedFloor =  
-        floor.updated((player.x, player.y), landingEffect.tile)
+      val tileChangeByLanding = ballOption flatMap { ball => 
+        landingEffect.tileChange map { tile =>
+          ((ball.x, ball.y), tile)
+        }
+      }
+      val updatedTiles = 
+        crumbleEffects.view.mapValues(_.tile) ++ tileChangeByLanding
+      val landingCrumbles = ballOption map { ball => 
+        neighbourhood(ball.x, ball.y)
+        .filter(landingEffect.crumble contains floor.getOrElse(_, Fall)) 
+      } getOrElse Set()
+      val crumbleCrumbles = crumbleEffects.map((p, c) => 
+        neighbourhood(p._1, p._2)
+        .filter(c.crumble contains floor.getOrElse(_, Fall))
+      ).flatten.toSet
+      val updatedCrumbles = landingCrumbles ++ crumbleCrumbles
       this.copy(
         seconds, 
-        player = updatedPlayer, 
+        part = (part + 1) % 8,
+        balls = balls.updated(part, updatedBall), 
         score = 
           if landingEffect.goal.map(goalAreas(_).active).getOrElse(false) then 
             score + 1 
           else 
             score,
-        floor = updatedFloor, 
+        floor = floor ++ updatedTiles, 
         goalAreas = updatedGoals,
-        crumbles = crumbles ++ (
-            neighbourhood(player.x, player.y)
-            .filter(landingEffect.crumble contains floor.getOrElse(_, Fall))
-          )
-      )
-    
-    def crumble: Model =
-      val crumbleEffects = crumbles.map(p => p -> floor.getOrElse(p, Fall).crumbleEffect).toMap
-      val updatedTiles = crumbleEffects.view.mapValues(_.tile)
-      val updatedCrumbles = crumbleEffects.map((p, c) => 
-        neighbourhood(p._1, p._2)
-        .filter(c.crumble contains floor.getOrElse(_, Fall))
-      ).flatten.toSet
-      this.copy(
-        floor = floor ++ updatedTiles,
-        crumbles = updatedCrumbles
+        crumbles = updatedCrumbles,
       )
   }
 
@@ -146,8 +157,18 @@ object Model {
     val height = 28
     Model(
       seconds = seconds,
+      part = 0,
       dice = dice,
-      player = Player(9, 9, 0, 0),
+      balls = Vector(
+        Some(Player(9, 9, 0, 0)),
+        Some(CannonBall(5, 5, 0, 1)),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None
+        ),
       score = 0,
       scoreGoal = 12,
       width = width,
@@ -215,8 +236,18 @@ object Model {
       )
     Model(
       seconds = seconds,
+      part = 0,
       dice = dice,
-      player = Player(goalPositions(2)._1+1, goalPositions(2)._2+1, 0, 0),
+      balls = Vector(
+        Some(Player(goalPositions(2)._1+1, goalPositions(2)._2+1, 0, 0)),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None
+        ),
       score = 0,
       scoreGoal = 12,
       width = width,
@@ -300,10 +331,16 @@ object Model {
     )
 }
 
-case class Player(x: Int, y: Int, dx: Int, dy: Int, dead: Boolean = false)
+abstract class Ball {
+  val x: Int; val y: Int; val dx: Int; val dy: Int
+}
+
+case class Player(x: Int, y: Int, dx: Int, dy: Int) extends Ball
+
+case class CannonBall(x: Int, y: Int, dx: Int, dy: Int) extends Ball
 
 case class LandingEffect(
-  tile: Tile, 
+  tileChange: Option[Tile] = None, 
   dx: Int = 0, 
   dy: Int = 0, 
   deadly: Boolean = false,
@@ -317,23 +354,23 @@ case class CrumbleEffect(
 )
   
 abstract class Tile {
-  def landingEffect(player: Player): LandingEffect = LandingEffect(this)
+  def landingEffect(ball: Ball): LandingEffect = LandingEffect(None)
   def crumbleEffect: CrumbleEffect = CrumbleEffect(this)
 }
 
 case object Solid extends Tile
 case object Fall extends Tile {
-  override def landingEffect(player: Player): LandingEffect = 
-    LandingEffect(this, deadly = true)
+  override def landingEffect(ball: Ball): LandingEffect = 
+    LandingEffect(None, deadly = true)
 }
 case class Crackable(cracks: Int) extends Tile {
-  override def landingEffect(player: Player): LandingEffect = 
+  override def landingEffect(ball: Ball): LandingEffect = 
     if (cracks == 0) then
-      LandingEffect(Crackable(1)) 
+      LandingEffect(Some(Crackable(1))) 
     else if (cracks == 1) then
-      LandingEffect(Crackable(2), crumble = Set(Crackable(1))) 
+      LandingEffect(Some(Crackable(2)), crumble = Set(Crackable(1))) 
     else 
-      LandingEffect(Fall, crumble = Set(Crackable(2)))
+      LandingEffect(Some(Fall), crumble = Set(Crackable(2)))
   override def crumbleEffect: CrumbleEffect =
     if (cracks == 0) then
       CrumbleEffect(Crackable(0))
@@ -343,19 +380,19 @@ case class Crackable(cracks: Int) extends Tile {
       CrumbleEffect(Fall, crumble = Set(Crackable(2)))
 }
 case object Sand extends Tile {
-  override def landingEffect(player: Player): LandingEffect =
-    LandingEffect(this, 
-    -(player.dx+player.dx.sign)/2, 
-    -(player.dy+player.dy.sign)/2
+  override def landingEffect(ball: Ball): LandingEffect =
+    LandingEffect(None, 
+    -(ball.dx+ball.dx.sign)/2, 
+    -(ball.dy+ball.dy.sign)/2
     )
 }
 case class Booster(direction: Direction, boost: Int) extends Tile {
-  override def landingEffect(player: Player): LandingEffect =
-    LandingEffect(this, direction.dx * boost, direction.dy * boost)
+  override def landingEffect(ball: Ball): LandingEffect =
+    LandingEffect(None, direction.dx * boost, direction.dy * boost)
 }
 case class Goal(goalAreaId: Int) extends Tile {
-  override def landingEffect(player: Player): LandingEffect =
-    LandingEffect(this, goal = Some(goalAreaId))
+  override def landingEffect(ball: Ball): LandingEffect =
+    LandingEffect(None, goal = Some(goalAreaId))
 }
 
 case class GoalArea(

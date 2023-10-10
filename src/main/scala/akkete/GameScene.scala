@@ -29,15 +29,14 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       context: SceneContext[Dice],
       model: Model
   ): GlobalEvent => Outcome[Model] =
-    val crumbleTime = Seconds(1.45) / 8
+    val turnTime = Seconds(1.45)
+    val turnPartTime = turnTime / 8
     {
-      case FrameTick if context.running - model.seconds > Seconds(1.45) =>
+      case FrameTick if context.running - model.seconds >= turnPartTime =>
         val inputDirection = context.keyboard.lastKeyHeldDown
           .flatMap(directionKeys.get(_))
           .headOption.getOrElse(NoDirection)
         Outcome(model.turn(seconds = context.running, input = inputDirection))
-      case FrameTick if (context.running - model.seconds) % (crumbleTime*2) > crumbleTime =>
-        Outcome(model.crumble)
       case KeyboardEvent.KeyDown(Key.KEY_R) =>
         Outcome(Model.arena1(context.running, context.dice))
       case _ => Outcome(model)
@@ -65,13 +64,13 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
 
     val gridSize     = 32
     val tileSize     = gridSize
-    val playerSize   = gridSize*3/4
-    val bounceHeight = gridSize*15/16
+    val playerSize   = gridSize * 3/4
+    val bounceHeight = gridSize * 15/16
     val turnTime = 1.45
-    val time = context.running - model.seconds
-    val timeFraction = time / turnTime
+    val time = (context.running - model.seconds).toDouble
 
     val tileCloneBlank = CloneBlank(
+
       CloneId("tile"),
       Graphic(
         bounds = Rectangle(0, 0, tileSize, tileSize),
@@ -80,19 +79,85 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       )
     )
 
-    val playerX = model.player.x * timeFraction.toDouble + (model.player.x - model.player.dx) * (1 - timeFraction.toDouble)
-    val playerY = model.player.y * timeFraction.toDouble + (model.player.y - model.player.dy) * (1 - timeFraction.toDouble)
-
     val viewPortWidthTiles = viewModel.viewport.width / tileSize + 1
     val viewPortHeightTiles = viewModel.viewport.height / tileSize + 1
 
+    val ballCoords: Vector[Option[(Double, Double, Double)]] =
+      (for i <- 0 until 8 yield { model.balls(i) map { ball =>
+        val ballInterpolation = 
+          (((model.part - i - 1) % 8 + 8) % 8 * turnTime / 8 + time) / turnTime
+        val ballX = 
+          ball.x * ballInterpolation 
+          + (ball.x - ball.dx) * (1 - ballInterpolation)
+        val ballY = 
+          ball.y * ballInterpolation 
+          + (ball.y - ball.dy) * (1 - ballInterpolation)
+        (ballX, ballY, ballInterpolation)
+      }}).toVector
+
+    val balls = Batch.fromIndexedSeq(
+      (for i <- 0 until 8 yield { ballCoords(i) map { coords =>
+        Shape.Circle(
+          center = Point(
+            (tileSize/2 + coords._1 * gridSize).toInt, 
+            (tileSize/2 + coords._2 * gridSize).toInt 
+            - (bounceAnimation.at(Seconds(coords._3)) 
+            * bounceHeight).toInt
+          ),
+          radius = playerSize/2,
+          fill = 
+            if i == 0 then Fill.Color(RGBA.Red) else Fill.Color(RGBA.Silver)
+        )
+      }}).flatten
+    )
+    val shadows = Batch.fromIndexedSeq(
+      (for i <- 0 until 8 yield { ballCoords(i) map { coords =>
+        Shape.Circle(
+          center = Point(
+            (tileSize/2 + coords._1 * gridSize).toInt, 
+            (tileSize/2 + coords._2 * gridSize).toInt
+          ),
+          radius = (
+            playerSize/2 
+            * (0.4 + 0.6 * (1 - bounceAnimation.at(Seconds(coords._3))))
+          ).toInt,
+          fill = Fill.Color(RGBA.Black.withAlpha(0.5))
+        ).scaleBy(1, 0.8)
+      }}).flatten
+    )
+
+    val previewModel = 
+      model.turn(viewModel.currentInput, model.seconds + turnTime * 1)
+           .turn(viewModel.currentInput, model.seconds + turnTime * 2)
+           .turn(viewModel.currentInput, model.seconds + turnTime * 3)
+           .turn(viewModel.currentInput, model.seconds + turnTime * 4)
+           .turn(viewModel.currentInput, model.seconds + turnTime * 5)
+           .turn(viewModel.currentInput, model.seconds + turnTime * 6)
+           .turn(viewModel.currentInput, model.seconds + turnTime * 7)
+           .turn(viewModel.currentInput, model.seconds + turnTime * 8)
+    val helper = Shape.Line(
+      Point(
+        tileSize/2 + model.balls(0).map(_.x).getOrElse(0) * gridSize, 
+        tileSize/2 + model.balls(0).map(_.y).getOrElse(0) * gridSize
+      ),
+      Point(
+        tileSize/2 + previewModel.balls(0).map(_.x).getOrElse(0) * gridSize, 
+        tileSize/2 + previewModel.balls(0).map(_.y).getOrElse(0) * gridSize
+      ),
+      Stroke(width = 2, color = RGBA.Blue)
+    )
+
     val cameraX = if (viewPortWidthTiles < model.width + 4) {
-       (viewPortWidthTiles.toDouble/2 - 4) max playerX min (model.width + 2 - viewPortWidthTiles.toDouble/2)
+       (viewPortWidthTiles.toDouble/2 - 4) max 
+       ballCoords(0).map(_._1).getOrElse((model.width.toDouble/2) - 1) min 
+       (model.width + 2 - viewPortWidthTiles.toDouble/2)
       } else {
         (model.width.toDouble/2) - 1
       }
     val cameraY = if (viewPortWidthTiles < model.width + 4) {
-        (viewPortHeightTiles.toDouble/2 - 4) max playerY min (model.height + 2 - viewPortHeightTiles.toDouble/2)
+        (viewPortHeightTiles.toDouble/2 - 4) max 
+        ballCoords(0).map(_._2).getOrElse((model.height.toDouble/2) - 1) min 
+        (model.height + 2 - viewPortHeightTiles.toDouble/2)
       } else {
         (model.height.toDouble/2) - 1
       }
@@ -134,41 +199,6 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       )
     )
 
-    val player = Shape.Circle(
-      center = Point(
-        (tileSize/2 + playerX * gridSize).toInt, 
-        (tileSize/2 + playerY * gridSize).toInt - (bounceAnimation.at(timeFraction) * bounceHeight).toInt
-      ),
-      radius = playerSize/2,
-      fill = 
-        if (model.player.dead) {
-          Fill.Color(RGBA.Blue)
-        } else {
-          Fill.Color(RGBA.Red)
-        }
-    )
-    val shadow = Shape.Circle(
-      center = Point(
-        (tileSize/2 + playerX * gridSize).toInt, 
-        (tileSize/2 + playerY * gridSize).toInt
-      ),
-      radius = (playerSize/2 * (0.4 + 0.6 * (1 - bounceAnimation.at(timeFraction)))).toInt,
-      fill = Fill.Color(RGBA.Black.withAlpha(0.5))
-    ).scaleBy(1, 0.8)
-
-    val previewModel = model.turn(viewModel.currentInput, model.seconds + turnTime)
-    val helper = Shape.Line(
-      Point(
-        tileSize/2 + model.player.x * gridSize, 
-        tileSize/2 + model.player.y * gridSize
-      ),
-      Point(
-        tileSize/2 + previewModel.player.x * gridSize, 
-        tileSize/2 + previewModel.player.y * gridSize
-      ),
-      Stroke(width = 2, color = RGBA.Blue)
-    )
-
     val scoreDisplay = TextBox(s"${model.score}/${model.scoreGoal}", 128, 64)
         .withFontFamily(FontFamily.sansSerif)
         .withColor(RGBA.White)
@@ -183,9 +213,9 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
 
     Outcome((
       SceneUpdateFragment(tiles).addCloneBlanks(tileCloneBlank)
-      |+| SceneUpdateFragment(shadow)
+      |+| SceneUpdateFragment(shadows)
       |+| SceneUpdateFragment(helper)
-      |+| SceneUpdateFragment(player)
+      |+| SceneUpdateFragment(balls)
       |+| SceneUpdateFragment(scoreDisplay)
       ).withCamera(Camera.LookAt(Point(
         (gridSize/2 + tileSize/2 + cameraX * gridSize).toInt,
