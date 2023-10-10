@@ -73,7 +73,8 @@ case class Model(
   floor: Map[(Int, Int), Tile],
   width: Int,
   height: Int,
-  goalAreas: Vector[GoalArea]
+  goalAreas: Vector[GoalArea],
+  enemyCounter: Int,
   ) {
     def turn(input: Direction, seconds: Seconds): Model = 
       val ballOption = balls(part)
@@ -154,10 +155,24 @@ case class Model(
         .filter(c.crumble contains floor.getOrElse(_, Fall))
       ).flatten.toSet
       val updatedCrumbles = landingCrumbles ++ crumbleCrumbles
+      val enemyAppears: (Int, Option[Ball]) = 
+        if enemyCounter == 99 && part == 0 then
+          val i = balls.indexOf(None)
+          val enemy = 
+            if i > -1 then Some(Chaser(3, 3, 1, 2)) else None
+          (i, enemy)
+        else
+          (-1, None)
+            
       this.copy(
         seconds, 
         part = (part + 1) % 8,
-        balls = balls.updated(part, updatedBall), 
+        balls = 
+          if enemyAppears._1 > -1 then 
+            balls.updated(part, updatedBall)
+                 .updated(enemyAppears._1, enemyAppears._2)
+          else
+            balls.updated(part, updatedBall), 
         score = 
           if landingEffect.goal.map(goalAreas(_).active).getOrElse(false) then 
             score + 1 
@@ -166,6 +181,7 @@ case class Model(
         floor = floor ++ updatedTiles, 
         goalAreas = updatedGoals,
         crumbles = updatedCrumbles,
+        enemyCounter = (enemyCounter + {if(part == 0) 1 else 0}) % 100,
       )
   }
 
@@ -236,7 +252,8 @@ object Model {
         GoalArea(true,  0, 2),
         GoalArea(false, 1, 2),
         GoalArea(false, 1, 2),
-      )
+      ),
+    enemyCounter = 60,
     )
   def arena1(seconds: Seconds, dice: Dice): Model = 
     val width = 36
@@ -261,7 +278,7 @@ object Model {
         None,
         None,
         None,
-        Some(Chaser(goalPositions(4)._1+1, goalPositions(4)._2+1, 0, 0)),
+        None,
         None,
         None,
         None
@@ -345,7 +362,8 @@ object Model {
         GoalArea(false, 2, 2),
         GoalArea(false, 3, 5),
         GoalArea(false, 4, 5),
-      )
+      ),
+    enemyCounter = 60,
     )
 }
 

@@ -210,6 +210,18 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
           (gridSize/2 + tileSize/2 + cameraX * gridSize - 64).toInt,
           (gridSize/2 + tileSize/2 + cameraY * gridSize - viewModel.viewport.height/2).toInt
         )
+    
+    val enemyCounterDisplay = TextBox(s"${model.enemyCounter}", 128, 64)
+        .withFontFamily(FontFamily.sansSerif)
+        .withColor(RGBA.White)
+        .withFontSize(Pixels(16))
+        .withStroke(TextStroke(RGBA.Black, Pixels(4)))
+        .bold
+        .alignCenter
+        .moveTo(
+          (gridSize/2 + tileSize/2 + cameraX * gridSize - 64).toInt,
+          (gridSize/2 + tileSize/2 + cameraY * gridSize - viewModel.viewport.height/2 + 32).toInt
+        )
 
     Outcome((
       SceneUpdateFragment(tiles).addCloneBlanks(tileCloneBlank)
@@ -217,6 +229,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       |+| SceneUpdateFragment(helper)
       |+| SceneUpdateFragment(balls)
       |+| SceneUpdateFragment(scoreDisplay)
+      |+| SceneUpdateFragment(enemyCounterDisplay)
       ).withCamera(Camera.LookAt(Point(
         (gridSize/2 + tileSize/2 + cameraX * gridSize).toInt,
         (gridSize/2 + tileSize/2 + cameraY * gridSize).toInt
