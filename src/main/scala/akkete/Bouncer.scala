@@ -104,10 +104,8 @@ case class Model(
                 val ydiff = player.y - (y + dy)
                 if scala.math.abs((xdiff)) >= scala.math.abs((ydiff)) then
                   if xdiff > 0 then Right else Left
-                else // if scala.math.abs((xdiff)) < scala.math.abs((ydiff)) then
+                else
                   if ydiff > 0 then Down else Up
-                // else
-                //   NoDirection
               }).getOrElse(NoDirection)
               val ndx = dx + direction.dx + landingEffect.dx
               val ndy = dy + direction.dy + landingEffect.dy
@@ -270,15 +268,19 @@ object Model {
     val width = 36
     val height = 28
     val goalPositions = Vector(
-        ( 4 + dice.rollFromZero(3), 4 + dice.rollFromZero(3) ),
-        ( 6 + dice.rollFromZero(3), height-1-10 + dice.rollFromZero(3) ),
-        ( width/2-1-1 + dice.rollFromZero(2), height/2-1-1 + dice.rollFromZero(2) ),
-        ( width-1-10 + dice.rollFromZero(3), 6 + dice.rollFromZero(3) ),
-        ( width-1-4-4 + dice.rollFromZero(3), height-1-4-4 + dice.rollFromZero(3) ),
-      )
+      (4 + dice.rollFromZero(3), 4 + dice.rollFromZero(3)),
+      (6 + dice.rollFromZero(3), height-1-10 + dice.rollFromZero(3)),
+      (width/2-1-1 + dice.rollFromZero(2), 
+       height/2-1-1 + dice.rollFromZero(2)),
+      (width-1-10 + dice.rollFromZero(3), 6 + dice.rollFromZero(3)),
+      (width-1-4-4 + dice.rollFromZero(3), 
+       height-1-4-4 + dice.rollFromZero(3)),
+    )
     val holePositions = Vector(
-        (goalPositions(0)._1+3 max 8, goalPositions(0)._2+3 max 8), 
-        (goalPositions(4)._1-6 min width-1-13, goalPositions(4)._2-6 min height-1-13), 
+        (goalPositions(0)._1+3 max 8, 
+         goalPositions(0)._2+3 max 8), 
+        (goalPositions(4)._1-6 min width-1-13, 
+         goalPositions(4)._2-6 min height-1-13), 
       )
     Model(
       seconds = seconds,
@@ -448,8 +450,10 @@ case class GoalArea(
     cooldown: Int,
     maxCooldown: Int
   ) {
-    def reduceCooldow: GoalArea = this.copy(cooldown = cooldown - 1 max 0)
-    def deactivate: GoalArea = this.copy(active = false, cooldown = maxCooldown)
+    def reduceCooldow: GoalArea = 
+      this.copy(cooldown = cooldown - 1 max 0)
+    def deactivate: GoalArea = 
+      this.copy(active = false, cooldown = maxCooldown)
   }
 
 case class ViewModel(
