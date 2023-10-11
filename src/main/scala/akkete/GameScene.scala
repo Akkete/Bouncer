@@ -183,8 +183,13 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
     val tiles = CloneTiles(
       CloneId("tile"),
       Batch.fromSet(
-        (for x <- cameraX.toInt - viewPortWidthTiles/2 to cameraX.toInt + viewPortWidthTiles/2 + 1;
-             y <- cameraY.toInt - viewPortHeightTiles/2 to cameraY.toInt + viewPortHeightTiles/2 + 1 yield
+        (for {
+          x <- cameraX.toInt - viewPortWidthTiles/2 to 
+                  cameraX.toInt + viewPortWidthTiles/2 + 1
+          y <- cameraY.toInt - viewPortHeightTiles/2 to 
+                  cameraY.toInt + viewPortHeightTiles/2 + 1 
+        }
+        yield
           val tile = model.floor.getOrElse((x, y), Fall)
           val (col, row) = tileGraphic(tile)
           CloneTileData(
@@ -207,8 +212,12 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         .bold
         .alignCenter
         .moveTo(
-          (gridSize/2 + tileSize/2 + cameraX * gridSize - 64).toInt,
-          (gridSize/2 + tileSize/2 + cameraY * gridSize - viewModel.viewport.height/2).toInt
+          (gridSize/2 + tileSize/2 
+          + cameraX * gridSize 
+          - 64).toInt,
+          (gridSize/2 + tileSize/2 
+          + cameraY * gridSize 
+          - viewModel.viewport.height/2).toInt
         )
     
     val enemyCounterDisplay = TextBox(s"${model.enemyCounter}", 128, 64)
@@ -219,8 +228,12 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         .bold
         .alignCenter
         .moveTo(
-          (gridSize/2 + tileSize/2 + cameraX * gridSize - 64).toInt,
-          (gridSize/2 + tileSize/2 + cameraY * gridSize - viewModel.viewport.height/2 + 32).toInt
+          (gridSize/2 + tileSize/2 
+          + cameraX * gridSize 
+          - 64).toInt,
+          (gridSize/2 + tileSize/2 
+          + cameraY * gridSize 
+          - viewModel.viewport.height/2 + 32).toInt
         )
 
     Outcome((
