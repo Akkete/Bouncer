@@ -100,14 +100,14 @@ case class Model(
               CannonBall(nx, ny, ndx, ndy)
             case Chaser(x, y, dx, dy) =>
               val direction: Direction = (balls(0) map { player =>
-                val xdiff = player.x - x
-                val ydiff = player.y - y
-                if scala.math.abs((xdiff)) > scala.math.abs((ydiff)) then
+                val xdiff = player.x - (x + dx)
+                val ydiff = player.y - (y + dy)
+                if scala.math.abs((xdiff)) >= scala.math.abs((ydiff)) then
                   if xdiff > 0 then Right else Left
-                else if scala.math.abs((xdiff)) < scala.math.abs((ydiff)) then
+                else // if scala.math.abs((xdiff)) < scala.math.abs((ydiff)) then
                   if ydiff > 0 then Down else Up
-                else
-                  NoDirection
+                // else
+                //   NoDirection
               }).getOrElse(NoDirection)
               val ndx = dx + direction.dx + landingEffect.dx
               val ndy = dy + direction.dy + landingEffect.dy
@@ -158,8 +158,19 @@ case class Model(
       val enemyAppears: (Int, Option[Ball]) = 
         if enemyCounter == 99 && part == 0 then
           val i = balls.indexOf(None)
+          val dx = dice.roll(5) - 3
+          val dy = dice.roll(5) - 3
+          val possibleSpots = (floor filter { 
+            (xy: (Int, Int), tile: Tile) => 
+              val (x, y) = xy
+              val landingEffect = tile.landingEffect(Chaser(x, y, dx, dy))
+              !landingEffect.deadly && landingEffect.goal.isEmpty
+          }).keySet
+          val landingSpot = if possibleSpots.isEmpty then (0, 0) else
+            possibleSpots.toVector(dice.rollFromZero(possibleSpots.size))
+          val (x, y) = landingSpot
           val enemy = 
-            if i > -1 then Some(Chaser(3, 3, 1, 2)) else None
+            if i > -1 then Some(Chaser(x, y, dx, dy)) else None
           (i, enemy)
         else
           (-1, None)
@@ -253,7 +264,7 @@ object Model {
         GoalArea(false, 1, 2),
         GoalArea(false, 1, 2),
       ),
-    enemyCounter = 60,
+    enemyCounter = 90,
     )
   def arena1(seconds: Seconds, dice: Dice): Model = 
     val width = 36
