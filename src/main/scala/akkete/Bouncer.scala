@@ -84,36 +84,7 @@ case class Model(
       val crumbleEffects = 
         crumbles.map(p => p -> floor.getOrElse(p, Fall).crumbleEffect).toMap
       val updatedBall = if landingEffect.deadly then None else 
-        ballOption.map { ball => 
-          ball match {
-            case Player(x, y, dx, dy) => 
-              val ndx = dx + input.dx + landingEffect.dx
-              val ndy = dy + input.dy + landingEffect.dy
-              val nx  = x + ndx
-              val ny  = y + ndy
-              Player(nx, ny, ndx, ndy)
-            case CannonBall(x, y, dx, dy) => 
-              val ndx = dx + landingEffect.dx
-              val ndy = dy + landingEffect.dy
-              val nx  = x + ndx
-              val ny  = y + ndy
-              CannonBall(nx, ny, ndx, ndy)
-            case Chaser(x, y, dx, dy) =>
-              val direction: Direction = (balls(0) map { player =>
-                val xdiff = player.x - (x + dx)
-                val ydiff = player.y - (y + dy)
-                if scala.math.abs((xdiff)) >= scala.math.abs((ydiff)) then
-                  if xdiff > 0 then Right else Left
-                else
-                  if ydiff > 0 then Down else Up
-              }).getOrElse(NoDirection)
-              val ndx = dx + direction.dx + landingEffect.dx
-              val ndy = dy + direction.dy + landingEffect.dy
-              val nx  = x + ndx
-              val ny  = y + ndy
-              Chaser(nx, ny, ndx, ndy)
-          }
-      }
+        ballOption.map(_.update(this, input))
       val updatedGoals = 
         landingEffect.goal.filter(goalAreas(_).active) 
           .map {scoredGoal => 
