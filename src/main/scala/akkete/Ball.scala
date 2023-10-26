@@ -1,6 +1,5 @@
 package akkete
 
-
 abstract class Ball {
   val x: Int; val y: Int; val dx: Int; val dy: Int
   def update(model: Model, input: Direction = NoDirection): Ball

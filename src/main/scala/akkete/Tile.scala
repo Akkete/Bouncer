@@ -2,6 +2,7 @@ package akkete
 
 import indigo.*
 import indigo.scenes.*
+
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 abstract class Tile {
