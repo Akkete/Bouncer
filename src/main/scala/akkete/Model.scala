@@ -2,6 +2,7 @@ package akkete
 
 import indigo.*
 import indigo.scenes.*
+
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 case class Model(
@@ -74,14 +75,14 @@ case class Model(
           val possibleSpots = (floor filter { 
             (xy: (Int, Int), tile: Tile) => 
               val (x, y) = xy
-              val landingEffect = tile.landingEffect(Chaser(x, y, dx, dy))
+              val landingEffect = tile.landingEffect(CarefulChaser(x, y, dx, dy))
               !landingEffect.deadly && landingEffect.goal.isEmpty
           }).keySet
           val landingSpot = if possibleSpots.isEmpty then (0, 0) else
             possibleSpots.toVector(dice.rollFromZero(possibleSpots.size))
           val (x, y) = landingSpot
           val enemy = 
-            if i > -1 then Some(Chaser(x, y, dx, dy)) else None
+            if i > -1 then Some(CarefulChaser(x, y, dx, dy)) else None
           (i, enemy)
         else
           (-1, None)
@@ -293,10 +294,6 @@ object Model {
     )
 }
 
-
-
-
-
 case class LandingEffect(
   tileChange: Option[Tile] = None, 
   dx: Int = 0, 
@@ -327,9 +324,13 @@ case class ViewModel(
   viewport: GameViewport
 )
 
-abstract class Direction{
+abstract class Direction {
   def dx: Int = 0
   def dy: Int = 0
+}
+
+object Direction {
+  val allDirections: Set[Direction] = Set(NoDirection, Up, Down, Left, Right)
 }
 
 case object NoDirection extends Direction
