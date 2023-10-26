@@ -60,5 +60,3 @@ object Bouncer extends IndigoGame[Unit, Dice, Model, ViewModel]:
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
     Outcome(SceneUpdateFragment.empty)
-
-
