@@ -64,7 +64,6 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
 
     val gridSize     = 32
     val tileSize     = gridSize
-    val playerSize   = gridSize * 3/4
     val bounceHeight = gridSize * 15/16
     val turnTime = 1.45
     val time = (context.running - model.seconds).toDouble
@@ -81,6 +80,24 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
 
     val viewPortWidthTiles = viewModel.viewport.width / tileSize + 1
     val viewPortHeightTiles = viewModel.viewport.height / tileSize + 1
+
+    def ballSize(ball: Ball): Int = 
+      ball match {
+        case Player(_, _, _, _)        => gridSize * 3/4
+        case CannonBall(_, _, _, _)    => gridSize * 5/8
+        case Chaser(_, _, _, _)        => gridSize * 11/16
+        case CarefulChaser(_, _, _, _) => gridSize * 11/16
+        case _ => gridSize * 1/2
+      }
+
+    def ballColor(ball: Ball): Fill =
+      ball match {
+        case Player(_, _, _, _)        => Fill.Color(RGBA.Red)
+        case CannonBall(_, _, _, _)    => Fill.Color(RGBA.Silver)
+        case Chaser(_, _, _, _)        => Fill.Color(RGBA.Yellow)
+        case CarefulChaser(_, _, _, _) => Fill.Color(RGBA.Magenta)
+        case _ => Fill.Color(RGBA.White)
+      }
 
     val ballCoords: Vector[Option[(Double, Double, Double)]] =
       (for i <- 0 until 8 yield { model.balls(i) map { ball =>
@@ -104,9 +121,8 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
             - (bounceAnimation.at(Seconds(coords._3)) 
             * bounceHeight).toInt
           ),
-          radius = playerSize/2,
-          fill = 
-            if i == 0 then Fill.Color(RGBA.Red) else Fill.Color(RGBA.Silver)
+          radius = ballSize(model.balls(i).get)/2,
+          fill = ballColor(model.balls(i).get)
         )
       }}).flatten
     )
@@ -118,7 +134,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
             (tileSize/2 + coords._2 * gridSize).toInt
           ),
           radius = (
-            playerSize/2 
+            ballSize(model.balls(i).get)/2
             * (0.4 + 0.6 * (1 - bounceAnimation.at(Seconds(coords._3))))
           ).toInt,
           fill = Fill.Color(RGBA.Black.withAlpha(0.5))
