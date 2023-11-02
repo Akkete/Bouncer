@@ -17,13 +17,17 @@ case class Model(
   width: Int,
   height: Int,
   goalAreas: Vector[GoalArea],
-  enemyCounter: Int,
+  meter: Int,
   ) {
     def turn(input: Direction, seconds: Seconds): Model = 
       val ballOption = balls(part)
       val landingEffect = ballOption map { ball => 
           floor.getOrElse((ball.x, ball.y), Fall).landingEffect(ball)
       } getOrElse LandingEffect(None)
+      val goalScored = 
+        landingEffect.goal.map(goalAreas(_).active).getOrElse(false)
+      val updatedMeter = 
+        meter + landingEffect.meter + (if(goalScored){20}else{0})
       val crumbleEffects = 
         crumbles.map(p => p -> floor.getOrElse(p, Fall).crumbleEffect).toMap
       val updatedBall = if landingEffect.deadly then None else 
@@ -68,15 +72,14 @@ case class Model(
       ).flatten.toSet
       val updatedCrumbles = landingCrumbles ++ crumbleCrumbles
       val enemyAppears: (Int, Option[Ball]) = 
-        if enemyCounter == 99 && part == 0 then
+        if updatedMeter > 99 then
           val i = balls.indexOf(None)
           val dx = dice.roll(5) - 3
           val dy = dice.roll(5) - 3
-          val possibleSpots = (floor filter { 
-            (xy: (Int, Int), tile: Tile) => 
-              val (x, y) = xy
-              val landingEffect = tile.landingEffect(CarefulChaser(x, y, dx, dy))
-              !landingEffect.deadly && landingEffect.goal.isEmpty
+          val possibleSpots = (floor filter { (xy: (Int, Int), tile: Tile) => 
+            val (x, y) = xy
+            val landingEffect = tile.landingEffect(CarefulChaser(x, y, dx, dy))
+            !landingEffect.deadly && landingEffect.goal.isEmpty
           }).keySet
           val landingSpot = if possibleSpots.isEmpty then (0, 0) else
             possibleSpots.toVector(dice.rollFromZero(possibleSpots.size))
@@ -97,14 +100,14 @@ case class Model(
           else
             balls.updated(part, updatedBall), 
         score = 
-          if landingEffect.goal.map(goalAreas(_).active).getOrElse(false) then 
+          if goalScored then 
             score + 1 
           else 
             score,
         floor = floor ++ updatedTiles, 
         goalAreas = updatedGoals,
         crumbles = updatedCrumbles,
-        enemyCounter = (enemyCounter + {if(part == 0) 1 else 0}) % 100,
+        meter = updatedMeter % 100,
       )
   }
 
@@ -176,7 +179,7 @@ object Model {
         GoalArea(false, 1, 2),
         GoalArea(false, 1, 2),
       ),
-    enemyCounter = 90,
+    meter = 90,
     )
   def arena1(seconds: Seconds, dice: Dice): Model = 
     val width = 36
@@ -290,23 +293,9 @@ object Model {
         GoalArea(false, 3, 5),
         GoalArea(false, 4, 5),
       ),
-    enemyCounter = 60,
+    meter = 60,
     )
 }
-
-case class LandingEffect(
-  tileChange: Option[Tile] = None, 
-  dx: Int = 0, 
-  dy: Int = 0, 
-  deadly: Boolean = false,
-  goal: Option[Int] = None,
-  crumble: Set[Tile] = Set.empty,
-  )
-
-case class CrumbleEffect(
-  tile: Tile,
-  crumble: Set[Tile] = Set.empty,
-)
 
 case class GoalArea(
     active: Boolean,
