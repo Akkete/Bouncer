@@ -2,6 +2,7 @@ package akkete
 
 import indigo.*
 import indigo.scenes.*
+import indigo.shared.datatypes.Fill.Color
 import indigo.shared.materials.Material.*
 
 
@@ -94,8 +95,8 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       ball match {
         case Player(_, _, _, _)        => Fill.Color(RGBA.Red)
         case CannonBall(_, _, _, _)    => Fill.Color(RGBA.Silver)
-        case Chaser(_, _, _, _)        => Fill.Color(RGBA.Yellow)
-        case CarefulChaser(_, _, _, _) => Fill.Color(RGBA.Magenta)
+        case Chaser(_, _, _, _)        => Fill.Color(RGBA.Yellow mix RGBA.Orange)
+        case CarefulChaser(_, _, _, _) => Fill.Color(RGBA.Yellow)
         case _ => Fill.Color(RGBA.White)
       }
 
@@ -178,9 +179,15 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         (model.height.toDouble/2) - 1
       }
 
-    def tileGraphic(tile: Tile): (Int, Int) = 
-      tile match {
-        case Fall              => (0, 0)
+    def tileGraphic(x: Int, y: Int): (Int, Int) = 
+      model.floor.getOrElse((x, y), Fall) match {
+        case Fall              => 
+          model.floor.getOrElse((x, y-1), Fall) match {
+            case Fall          => (3, 0)
+            case Crackable(_)  => (3, 2)
+            case Sand          => (3, 2)
+            case _             => (3, 1)
+          }
         case Solid             => (0, 1)
         case Goal(id)          => 
           (if(model.goalAreas(id).active) then 2 else 1, 1)
@@ -207,7 +214,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         }
         yield
           val tile = model.floor.getOrElse((x, y), Fall)
-          val (col, row) = tileGraphic(tile)
+          val (col, row) = tileGraphic(x, y)
           CloneTileData(
             gridSize * x,
             gridSize * y,
@@ -220,7 +227,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       )
     )
 
-    val scoreDisplay = TextBox(s"${model.score}/${model.scoreGoal}", 128, 64)
+    val scoreDisplay = TextBox(s"${model.score}", 128, 64)
         .withFontFamily(FontFamily.sansSerif)
         .withColor(RGBA.White)
         .withFontSize(Pixels(32))
@@ -235,22 +242,67 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
           + cameraY * gridSize 
           - viewModel.viewport.height/2).toInt
         )
-    
-    val enemyCounterDisplay = TextBox(s"${model.enemyCounter}", 128, 64)
+
+    val moveInstructions = TextBox(
+        "Use arrow keys to accelerate between bounces.",
+        1000, 32)
         .withFontFamily(FontFamily.sansSerif)
         .withColor(RGBA.White)
         .withFontSize(Pixels(16))
         .withStroke(TextStroke(RGBA.Black, Pixels(4)))
-        .bold
-        .alignCenter
+        .alignLeft
         .moveTo(
           (gridSize/2 + tileSize/2 
           + cameraX * gridSize 
-          - 64).toInt,
+          - viewModel.viewport.width/2 + 16).toInt,
           (gridSize/2 + tileSize/2 
           + cameraY * gridSize 
-          - viewModel.viewport.height/2 + 32).toInt
+          - viewModel.viewport.height/2 + 16).toInt
         )
+
+    val restartInstructions = TextBox(
+        "Press 'R' to restart.",
+        1000, 32)
+        .withFontFamily(FontFamily.sansSerif)
+        .withColor(RGBA.White)
+        .withFontSize(Pixels(16))
+        .withStroke(TextStroke(RGBA.Black, Pixels(4)))
+        .alignLeft
+        .moveTo(
+          (gridSize/2 + tileSize/2 
+          + cameraX * gridSize 
+          - viewModel.viewport.width/2 + 16).toInt,
+          (gridSize/2 + tileSize/2 
+          + cameraY * gridSize 
+          - viewModel.viewport.height/2 + 16 + 32).toInt
+        )
+
+    val meterDisplay = Batch(
+      Shape.Box(
+        dimensions = Rectangle(0, 0, 256, 16), 
+        fill = Fill.Color(RGBA.White.withAlpha(0.5))
+      )
+        .moveTo(
+          (gridSize/2 + tileSize/2 
+          + cameraX * gridSize 
+          - 128).toInt,
+          (gridSize/2 + tileSize/2 
+          + cameraY * gridSize 
+          - viewModel.viewport.height/2 + 48).toInt
+        ),
+      Shape.Box(
+                dimensions = Rectangle(0, 0, 256*model.meter/100, 16), 
+        fill = Fill.Color(RGBA.Yellow)
+      )
+        .moveTo(
+          (gridSize/2 + tileSize/2 
+          + cameraX * gridSize 
+          - 128).toInt,
+          (gridSize/2 + tileSize/2 
+          + cameraY * gridSize 
+          - viewModel.viewport.height/2 + 48).toInt
+        ),
+    )
 
     Outcome((
       SceneUpdateFragment(tiles).addCloneBlanks(tileCloneBlank)
@@ -258,7 +310,9 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       |+| SceneUpdateFragment(helper)
       |+| SceneUpdateFragment(balls)
       |+| SceneUpdateFragment(scoreDisplay)
-      |+| SceneUpdateFragment(enemyCounterDisplay)
+      |+| SceneUpdateFragment(meterDisplay)
+      |+| SceneUpdateFragment(moveInstructions)
+      |+| SceneUpdateFragment(restartInstructions)
       ).withCamera(Camera.LookAt(Point(
         (gridSize/2 + tileSize/2 + cameraX * gridSize).toInt,
         (gridSize/2 + tileSize/2 + cameraY * gridSize).toInt
