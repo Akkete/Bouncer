@@ -2,6 +2,7 @@ import scala.sys.process._
 import scala.language.postfixOps
 
 import sbtwelcome._
+import indigoplugin._
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -9,13 +10,24 @@ Test / scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
 
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
 
+lazy val gameOptions: IndigoOptions =
+  IndigoOptions.defaults
+    .withTitle("Bouncer")
+    .withWindowSize(1100, 800)
+    .withBackgroundColor("black")
+    .withAssetDirectory("assets")
+    .excludeAssets {
+      case p if p.endsWith(os.RelPath.rel / ".gitkeep") => true
+      case _                                            => false
+    }
+
 lazy val mygame =
   (project in file("."))
     .enablePlugins(ScalaJSPlugin, SbtIndigo)
     .settings( // Normal SBT settings
       name         := "bouncer",
       version      := "0.0.1",
-      scalaVersion := "3.2.2",
+      scalaVersion := "3.3.1",
       organization := "akkete",
       libraryDependencies ++= Seq(
         "org.scalameta" %%% "munit" % "0.7.29" % Test
@@ -26,19 +38,17 @@ lazy val mygame =
       semanticdbVersion  := scalafixSemanticdb.revision,
     )
     .settings( // Indigo specific settings
-      showCursor            := false,
-      title                 := "Bouncer",
-      gameAssetsDirectory   := "assets",
-      windowStartWidth      := 1100,
-      windowStartHeight     := 800,
-      disableFrameRateLimit := false,
-      electronInstall       := indigoplugin.ElectronInstall.Latest,
-      backgroundColor       := "black",
+      indigoOptions := gameOptions,
       libraryDependencies ++= Seq(
-        "io.indigoengine" %%% "indigo-json-circe" % "0.14.0",
-        "io.indigoengine" %%% "indigo"            % "0.14.0",
-        "io.indigoengine" %%% "indigo-extras"     % "0.14.0"
-      )
+        "io.indigoengine" %%% "indigo-json-circe" % "0.15.1",
+        "io.indigoengine" %%% "indigo"            % "0.15.1",
+        "io.indigoengine" %%% "indigo-extras"     % "0.15.1"
+      ),
+      Compile / sourceGenerators += Def.task {
+        IndigoGenerators("akkete.generated")
+          .generateConfig("Config", gameOptions)
+          .toSourceFiles((Compile / sourceManaged).value)
+      }
     )
     .settings(
       code := {
