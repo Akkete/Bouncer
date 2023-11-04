@@ -295,6 +295,72 @@ object Model {
             (i+x, j+y) -> Goal(id)
         ).toMap
     )
+
+  def arena2(seconds: Seconds, dice: Dice): Model = 
+    val cols = 6
+    val rows = 3
+    val pointSize = 3
+    val maxDisplacement = 1
+    val distance = 4
+    val gridSize = pointSize + maxDisplacement + distance
+    val upperLeft = gridSize/2 - pointSize + 1
+    val goalPoints = Vector((1, 0), (cols-2, rows - 1))
+    val displacements: Map[(Int, Int), (Int, Int)] = (
+      for col <- 0 until cols; row <- 0 until rows yield (col, row) -> 
+        (dice.rollFromZero(maxDisplacement+1), 
+         dice.rollFromZero(maxDisplacement+1))
+      ).toMap
+    val tileOptions = Vector(
+      Solid, 
+      Sand, Sand, Sand, 
+      Crackable(0), Crackable(0), 
+      Crackable(1), Crackable(1),
+      Booster(Up, 2), Booster(Down, 2), Booster(Left, 2), Booster(Right, 2))
+    val tileTypes: Map[(Int, Int), Tile] = (
+      for col <- 0 until cols; row <- 0 until rows yield (col, row) ->
+        (if goalPoints(0) == (col, row) then Goal(0) else
+         if goalPoints(1) == (col, row) then Goal(1) else
+          tileOptions(dice.rollFromZero(tileOptions.length)))
+    ).toMap
+    val floor: Map[(Int, Int), Tile] = (
+      for {
+        col <- 0 until cols
+        row <- 0 until rows
+        x   <- 0 until gridSize
+        y   <- 0 until gridSize
+      } yield 
+        val horizontalCenter = 
+          x >= upperLeft + displacements((col, row))._1 && 
+          x <  upperLeft + displacements((col, row))._1 + 3
+        val verticalCenter = 
+          y >= upperLeft + displacements((col, row))._2 && 
+          y <  upperLeft + displacements((col, row))._2 + 3
+        val tile = 
+          if horizontalCenter && verticalCenter then
+            tileTypes((col, row))
+          else if horizontalCenter || verticalCenter then
+            Crackable(0)
+          else Fall
+        (col * gridSize + x, row * gridSize + y) -> tile
+    ).toMap
+    Model(
+      seconds = seconds,
+      part = 0,
+      dice = dice,
+      score = 0,
+      scoreGoal = 50,
+      width  = cols * 8,
+      height = rows * 8,
+      meter = 60,
+      balls = Vector(
+        Some(Player(
+          goalPoints(1)._1 * gridSize + upperLeft + displacements(goalPoints(1))._1 + 1, 
+          goalPoints(1)._2 * gridSize + upperLeft + displacements(goalPoints(1))._2 + 1,
+          0, 0)),
+        None, None, None, None, None, None, None),
+      goalAreas = Vector(GoalArea(true, 0, 1), GoalArea(false, 1, 1)),
+      floor = floor
+    )
 }
 
 case class GoalArea(

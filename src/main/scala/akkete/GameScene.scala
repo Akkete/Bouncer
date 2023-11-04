@@ -40,6 +40,8 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         Outcome(model.turn(seconds = context.running, input = inputDirection))
       case KeyboardEvent.KeyDown(Key.KEY_R) =>
         Outcome(Model.arena1(context.running, context.dice))
+      case KeyboardEvent.KeyDown(Key.KEY_2) =>
+        Outcome(Model.arena2(context.running, context.dice))
       case _ => Outcome(model)
     }
 
