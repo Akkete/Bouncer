@@ -79,9 +79,6 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       )
     )
 
-    val viewPortWidthTiles = viewModel.viewport.width / tileSize + 1
-    val viewPortHeightTiles = viewModel.viewport.height / tileSize + 1
-
     def ballSize(ball: Ball): Int = 
       ball match {
         case Player(_, _, _, _)        => gridSize * 3/4
@@ -164,6 +161,9 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       Stroke(width = 2, color = RGBA.Blue)
     )
 
+    val viewPortWidthTiles = viewModel.viewport.width / tileSize + 1
+    val viewPortHeightTiles = viewModel.viewport.height / tileSize + 1
+
     val cameraX = if (viewPortWidthTiles < model.width + 4) {
        (viewPortWidthTiles.toDouble/2 - 4) max 
        ballCoords(0).map(_._1).getOrElse((model.width.toDouble/2) - 1) min 
@@ -179,6 +179,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         (model.height.toDouble/2) - 1
       }
 
+    /** Maps xy-coordinates to spritesheet columns and rows. */
     def tileGraphic(x: Int, y: Int): (Int, Int) = 
       model.floor.getOrElse((x, y), Fall) match {
         case Fall              => 
@@ -202,26 +203,26 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         case _                 => (1, 0)
       }
       
-
     val tiles = CloneTiles(
       CloneId("tile"),
       Batch.fromSet(
+        // List out xy-coordinates visible on screen
         (for {
           x <- cameraX.toInt - viewPortWidthTiles/2 to 
-                  cameraX.toInt + viewPortWidthTiles/2 + 1
+               cameraX.toInt + viewPortWidthTiles/2 + 1
           y <- cameraY.toInt - viewPortHeightTiles/2 to 
-                  cameraY.toInt + viewPortHeightTiles/2 + 1 
+               cameraY.toInt + viewPortHeightTiles/2 + 1 
         }
         yield
           val tile = model.floor.getOrElse((x, y), Fall)
           val (col, row) = tileGraphic(x, y)
           CloneTileData(
-            gridSize * x,
-            gridSize * y,
-            tileSize * col,
-            tileSize * row,
-            tileSize,
-            tileSize
+            x          = gridSize * x,
+            y          = gridSize * y,
+            cropX      = tileSize * col,
+            cropY      = tileSize * row,
+            cropWidth  = tileSize,
+            cropHeight = tileSize
           )
         ).toSet
       )
