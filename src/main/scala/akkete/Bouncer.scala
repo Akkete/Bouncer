@@ -2,8 +2,9 @@ package akkete
 
 import indigo.*
 import indigo.scenes.*
-
 import scala.scalajs.js.annotation.JSExportTopLevel
+
+import akkete.generated.Config
 
 @JSExportTopLevel("IndigoGame")
 object Bouncer extends IndigoGame[Unit, Dice, Model, ViewModel]:
@@ -20,8 +21,7 @@ object Bouncer extends IndigoGame[Unit, Dice, Model, ViewModel]:
   def boot(flags: Map[String, String]): Outcome[BootResult[Unit]] =
     Outcome(
       BootResult.noData(
-        GameConfig.default
-          .withViewport(1100, 800)
+        Config.config
       )
       .withAssets(
         AssetType.Image(AssetName("tiles"), AssetPath("assets/TileMap.png")),
