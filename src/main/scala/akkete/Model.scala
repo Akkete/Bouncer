@@ -119,6 +119,10 @@ object Model {
       seconds = seconds,
       part = 0,
       dice = dice,
+      score = 0,
+      scoreGoal = 12,
+      width = width,
+      height = height,
       balls = Vector(
         Some(Player(9, 9, 0, 0)),
         Some(CannonBall(21, 5, 1, 1)),
@@ -129,10 +133,13 @@ object Model {
         None,
         None
         ),
-      score = 0,
-      scoreGoal = 12,
-      width = width,
-      height = height,
+      goalAreas = Vector(
+        GoalArea(false, 1, 2),
+        GoalArea(true,  0, 2),
+        GoalArea(false, 1, 2),
+        GoalArea(false, 1, 2),
+      ),
+      meter = 90,
       floor = (
           for i <- 0 until width; j <- 0 until height yield
             if (i < 1 || i >= width-1 || j < 1 || j >= height-1) {
@@ -172,15 +179,9 @@ object Model {
             } else {
               (i, j) -> Solid
             }
-        ).toMap,
-    goalAreas = Vector(
-        GoalArea(false, 1, 2),
-        GoalArea(true,  0, 2),
-        GoalArea(false, 1, 2),
-        GoalArea(false, 1, 2),
-      ),
-    meter = 90,
+        ).toMap
     )
+
   def arena1(seconds: Seconds, dice: Dice): Model = 
     val width = 36
     val height = 28
@@ -203,6 +204,11 @@ object Model {
       seconds = seconds,
       part = 0,
       dice = dice,
+      score = 0,
+      scoreGoal = 50,
+      width = width,
+      height = height,
+      meter = 60,
       balls = Vector(
         Some(Player(goalPositions(2)._1+1, goalPositions(2)._2+1, 0, 0)),
         None,
@@ -213,10 +219,13 @@ object Model {
         None,
         None
         ),
-      score = 0,
-      scoreGoal = 50,
-      width = width,
-      height = height,
+      goalAreas = Vector(
+        GoalArea(true,  0, 5),
+        GoalArea(false, 1, 5),
+        GoalArea(false, 2, 2),
+        GoalArea(false, 3, 5),
+        GoalArea(false, 4, 5),
+      ),
       floor = 
         (
           for i <- 0 until width; j <- 0 until height yield
@@ -285,15 +294,6 @@ object Model {
             i <- 0 until 3; j <- 0 until 3 yield
             (i+x, j+y) -> Goal(id)
         ).toMap
-      ,
-    goalAreas = Vector(
-        GoalArea(true,  0, 5),
-        GoalArea(false, 1, 5),
-        GoalArea(false, 2, 2),
-        GoalArea(false, 3, 5),
-        GoalArea(false, 4, 5),
-      ),
-    meter = 60,
     )
 }
 
