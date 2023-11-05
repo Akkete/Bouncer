@@ -30,7 +30,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       context: SceneContext[Dice],
       model: Model
   ): GlobalEvent => Outcome[Model] =
-    val turnTime = Seconds(1.45)
+    val turnTime = Seconds(1.0/(85.0/60.0))
     val turnPartTime = turnTime / 8
     {
       case FrameTick if context.running - model.seconds >= turnPartTime =>
@@ -68,7 +68,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
     val gridSize     = 32
     val tileSize     = gridSize
     val bounceHeight = gridSize * 15/16
-    val turnTime = 1.45
+    val turnTime = 1.0/(85.0/60.0)
     val time = (context.running - model.seconds).toDouble
 
     val tileCloneBlank = CloneBlank(
