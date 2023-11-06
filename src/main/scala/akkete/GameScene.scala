@@ -65,8 +65,8 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       viewModel: ViewModel
   ): Outcome[SceneUpdateFragment] =
 
-    val gridSize     = 32
-    val tileSize     = gridSize
+    val tileSize     = 32
+    val gridSize     = tileSize + 16
     val bounceHeight = gridSize * 15/16
     val turnTime = 1.0/(85.0/60.0)
     val time = (context.running - model.seconds).toDouble
@@ -83,11 +83,11 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
 
     def ballSize(ball: Ball): Int = 
       ball match {
-        case Player(_, _, _, _)        => gridSize * 3/4
-        case CannonBall(_, _, _, _)    => gridSize * 5/8
-        case Chaser(_, _, _, _)        => gridSize * 11/16
-        case CarefulChaser(_, _, _, _) => gridSize * 11/16
-        case _ => gridSize * 1/2
+        case Player(_, _, _, _)        => tileSize * 3/4
+        case CannonBall(_, _, _, _)    => tileSize * 5/8
+        case Chaser(_, _, _, _)        => tileSize * 11/16
+        case CarefulChaser(_, _, _, _) => tileSize * 11/16
+        case _ => tileSize * 1/2
       }
 
     def ballColor(ball: Ball): Fill =
@@ -163,8 +163,8 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       Stroke(width = 2, color = RGBA.Blue)
     )
 
-    val viewPortWidthTiles = viewModel.viewport.width / tileSize + 1
-    val viewPortHeightTiles = viewModel.viewport.height / tileSize + 1
+    val viewPortWidthTiles = viewModel.viewport.width / gridSize + 1
+    val viewPortHeightTiles = viewModel.viewport.height / gridSize + 1
 
     val cameraX = if (viewPortWidthTiles < model.width + 4) {
        (viewPortWidthTiles.toDouble/2 - 4) max 
@@ -238,12 +238,8 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         .bold
         .alignCenter
         .moveTo(
-          (gridSize/2 + tileSize/2 
-          + cameraX * gridSize 
-          - 64).toInt,
-          (gridSize/2 + tileSize/2 
-          + cameraY * gridSize 
-          - viewModel.viewport.height/2).toInt
+          (tileSize/2 + cameraX * gridSize - 64).toInt,
+          (tileSize/2 + cameraY * gridSize - viewModel.viewport.height/2).toInt
         )
 
     val moveInstructions = TextBox(
@@ -255,11 +251,9 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         .withStroke(TextStroke(RGBA.Black, Pixels(4)))
         .alignLeft
         .moveTo(
-          (gridSize/2 + tileSize/2 
-          + cameraX * gridSize 
+          (tileSize/2 + cameraX * gridSize 
           - viewModel.viewport.width/2 + 16).toInt,
-          (gridSize/2 + tileSize/2 
-          + cameraY * gridSize 
+          (tileSize/2 + cameraY * gridSize 
           - viewModel.viewport.height/2 + 16).toInt
         )
 
@@ -272,10 +266,10 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         .withStroke(TextStroke(RGBA.Black, Pixels(4)))
         .alignLeft
         .moveTo(
-          (gridSize/2 + tileSize/2 
+          (tileSize/2 
           + cameraX * gridSize 
           - viewModel.viewport.width/2 + 16).toInt,
-          (gridSize/2 + tileSize/2 
+          (tileSize/2 
           + cameraY * gridSize 
           - viewModel.viewport.height/2 + 16 + 32).toInt
         )
@@ -286,23 +280,17 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
         fill = Fill.Color(RGBA.White.withAlpha(0.5))
       )
         .moveTo(
-          (gridSize/2 + tileSize/2 
-          + cameraX * gridSize 
-          - 128).toInt,
-          (gridSize/2 + tileSize/2 
-          + cameraY * gridSize 
+          (tileSize/2 + cameraX * gridSize - 128).toInt,
+          (tileSize/2 + cameraY * gridSize 
           - viewModel.viewport.height/2 + 48).toInt
         ),
       Shape.Box(
-                dimensions = Rectangle(0, 0, 256*model.meter/100, 16), 
+                dimensions = Rectangle(0, 0, 256 * model.meter / 100, 16), 
         fill = Fill.Color(RGBA.Yellow)
       )
         .moveTo(
-          (gridSize/2 + tileSize/2 
-          + cameraX * gridSize 
-          - 128).toInt,
-          (gridSize/2 + tileSize/2 
-          + cameraY * gridSize 
+          (tileSize/2 + cameraX * gridSize - 128).toInt,
+          (tileSize/2 + cameraY * gridSize 
           - viewModel.viewport.height/2 + 48).toInt
         ),
     )
@@ -317,8 +305,8 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
       |+| SceneUpdateFragment(moveInstructions)
       |+| SceneUpdateFragment(restartInstructions)
       ).withCamera(Camera.LookAt(Point(
-        (gridSize/2 + tileSize/2 + cameraX * gridSize).toInt,
-        (gridSize/2 + tileSize/2 + cameraY * gridSize).toInt
+        (tileSize/2 + cameraX * gridSize).toInt,
+        (tileSize/2 + cameraY * gridSize).toInt
         )))
     )
 
