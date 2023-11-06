@@ -66,7 +66,7 @@ object GameScene extends Scene[Dice, Model, ViewModel]:
   ): Outcome[SceneUpdateFragment] =
 
     val tileSize     = 32
-    val gridSize     = tileSize + 16
+    val gridSize     = tileSize
     val bounceHeight = gridSize * 15/16
     val turnTime = 1.0/(85.0/60.0)
     val time = (context.running - model.seconds).toDouble
