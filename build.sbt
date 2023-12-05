@@ -40,9 +40,9 @@ lazy val mygame =
     .settings( // Indigo specific settings
       indigoOptions := gameOptions,
       libraryDependencies ++= Seq(
-        "io.indigoengine" %%% "indigo-json-circe" % "0.15.1",
-        "io.indigoengine" %%% "indigo"            % "0.15.1",
-        "io.indigoengine" %%% "indigo-extras"     % "0.15.1"
+        "io.indigoengine" %%% "indigo-json-circe" % "0.15.2",
+        "io.indigoengine" %%% "indigo"            % "0.15.2",
+        "io.indigoengine" %%% "indigo-extras"     % "0.15.2"
       ),
       Compile / sourceGenerators += Def.task {
         IndigoGenerators("akkete.generated")
