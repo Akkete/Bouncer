@@ -12,5 +12,5 @@ Racetrack ([1][Wikipedia – Racetrack], [2][Graph racers]).
 [Graph racers]: <https://www.sjbaker.org/paper_and_pencil_games/graph_racers/>
 
 The game can be played online at 
-<https://bouncer.nfshost.com/> 
+<https://bouncer.nfshost.com> 
 (keyboard required).
